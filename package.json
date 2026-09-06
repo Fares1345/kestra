@@ -1,0 +1,9 @@
+{
+  "name": "kestra",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Storefront for KESTRA energy drinks, with a real-time 3D can and a cinematic opening sequence",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
