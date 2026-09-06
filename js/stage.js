@@ -1,10 +1,14 @@
 /**
- * The WebGL stage: one renderer, one can, and a small procedural photo studio.
+ * The WebGL stage: one renderer, one can, one twelve-pack, and a small
+ * procedural photo studio.
  *
- * The realism here comes almost entirely from the environment map rather than
- * from lamps. Cylindrical metal reads as metal because of the long vertical
- * highlights thrown by strip softboxes, so we build a tiny room out of emissive
- * planes and prefilter it. The lights on top only add the accent rims.
+ * Realism here comes from the environment map rather than from lamps.
+ * Cylindrical metal reads as metal because of the long vertical highlights
+ * thrown by strip softboxes, so the room is built from emissive planes and
+ * prefiltered. The coloured lights on top only add the accent rim.
+ *
+ * The can and the pack share one geometry set and one material per flavour.
+ * The pack is not built at all until the page is near it.
  */
 
 import * as THREE from 'three';
@@ -13,11 +17,13 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-import { createCan, CAN_DIMENSIONS } from './can.js';
+import { createCan, buildCanGeometries, CAN_DIMENSIONS } from './can.js';
+import { createPack } from './pack.js';
 import {
   paintColourSheet,
   paintSurfaceSheets,
   paintLidSheets,
+  paintCartonSheets,
   makeGlowSprite,
   makeContactShadow,
   makeFloorFade,
@@ -36,13 +42,14 @@ export function detectQuality() {
   const narrow = innerWidth < 820;
   const cores = navigator.hardwareConcurrency || 4;
   const memory = navigator.deviceMemory || 4;
-
   const low = coarse || narrow || cores <= 4 || memory <= 4;
-  if (typeof gl.getExtension === 'function') gl.getExtension('WEBGL_lose_context')?.loseContext();
+
+  gl.getExtension?.('WEBGL_lose_context')?.loseContext();
 
   return {
     tier: low ? 'low' : 'high',
     segments: low ? 96 : 176,
+    packSegments: low ? 40 : 72,
     dust: low ? 240 : 680,
     bloom: !low,
     maxPixelRatio: low ? 1.75 : 2,
@@ -55,28 +62,28 @@ export function detectQuality() {
  * ------------------------------------------------------------------ */
 
 function glowPanel(w, h, colour, intensity) {
-  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colour).multiplyScalar(intensity) });
-  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(w, h),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(colour).multiplyScalar(intensity) })
+  );
 }
 
 function buildStudio() {
   const room = new THREE.Scene();
 
-  // The walls. Not black — a real studio bounces a little light back.
-  const shell = new THREE.Mesh(
-    new THREE.BoxGeometry(14, 14, 14),
-    new THREE.MeshBasicMaterial({ color: 0x0a0b0e, side: THREE.BackSide })
+  room.add(
+    new THREE.Mesh(
+      new THREE.BoxGeometry(14, 14, 14),
+      new THREE.MeshBasicMaterial({ color: 0x0a0b0e, side: THREE.BackSide })
+    )
   );
-  room.add(shell);
 
-  // Key softbox, high and slightly front-left.
   const key = glowPanel(7, 5, 0xffffff, 3.1);
   key.position.set(-2.6, 5.2, 3.4);
   key.lookAt(0, 0.6, 0);
   room.add(key);
 
-  // Two tall strips. These are the highlights that make aluminium look like
-  // aluminium — narrow, bright, and far enough apart to wrap the cylinder.
+  // The two tall strips are what make aluminium look like aluminium.
   const stripL = glowPanel(0.75, 11, 0xf2f6ff, 9.5);
   stripL.position.set(-3.5, 1.4, 1.9);
   stripL.rotation.y = Math.PI * 0.34;
@@ -87,19 +94,16 @@ function buildStudio() {
   stripR.rotation.y = -Math.PI * 0.44;
   room.add(stripR);
 
-  // A narrow kicker behind, to separate the silhouette from the background.
   const kicker = glowPanel(0.5, 9, 0xdce6ff, 6);
   kicker.position.set(1.6, 1.6, -3.6);
   kicker.rotation.y = Math.PI * 0.06;
   room.add(kicker);
 
-  // Warm bounce card at floor level, filling the shadow side.
   const bounce = glowPanel(6, 2.6, 0xffd8b4, 0.85);
   bounce.position.set(1.4, -1.6, 3);
   bounce.rotation.x = -Math.PI * 0.22;
   room.add(bounce);
 
-  // Dark flag overhead so the top of the can does not blow out.
   const flag = glowPanel(6, 6, 0x05060a, 1);
   flag.position.set(0, 6.6, -1);
   flag.rotation.x = Math.PI / 2;
@@ -115,19 +119,14 @@ function buildStudio() {
 function makeDust(count, sprite) {
   const positions = new Float32Array(count * 3);
   const scales = new Float32Array(count);
-  const drift = new Float32Array(count * 3);
 
   for (let i = 0; i < count; i++) {
-    // A tall cylinder of motes around the can, denser near it.
     const radius = 0.5 + Math.pow(Math.random(), 0.65) * 4.2;
     const angle = Math.random() * Math.PI * 2;
     positions[i * 3] = Math.cos(angle) * radius;
     positions[i * 3 + 1] = -1.2 + Math.random() * 5.4;
     positions[i * 3 + 2] = Math.sin(angle) * radius;
     scales[i] = 0.007 + Math.pow(Math.random(), 3.4) * 0.026;
-    drift[i * 3] = (Math.random() - 0.5) * 0.05;
-    drift[i * 3 + 1] = 0.03 + Math.random() * 0.12;
-    drift[i * 3 + 2] = (Math.random() - 0.5) * 0.05;
   }
 
   const geo = new THREE.BufferGeometry();
@@ -149,14 +148,12 @@ function makeDust(count, sprite) {
       varying float vFade;
       void main() {
         vec3 p = position;
-        // Slow convection plus a per-mote wobble, so nothing moves in lockstep.
         p.y = mod(p.y + uTime * 0.055 + aScale * 40.0 + 1.2, 5.4) - 1.2;
         p.x += sin(uTime * 0.28 + p.y * 1.7) * 0.09;
         p.z += cos(uTime * 0.23 + p.y * 1.4) * 0.09;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
         gl_PointSize = aScale * 620.0 * uPixelRatio / -mv.z;
-        // Fade motes out as they reach the top of the column.
         vFade = smoothstep(0.0, 0.6, p.y + 1.2) * (1.0 - smoothstep(2.8, 4.2, p.y));
       }
     `,
@@ -178,11 +175,10 @@ function makeDust(count, sprite) {
 
   const points = new THREE.Points(geo, mat);
   points.frustumCulled = false;
-  points.userData.drift = drift;
   return points;
 }
 
-/** Fast vertical streaks, only used for the ignition beat of the intro. */
+/** Fast rising embers, used only for the ignition beat of the intro. */
 function makeSparks(count, sprite) {
   const positions = new Float32Array(count * 3);
   const seeds = new Float32Array(count);
@@ -248,7 +244,7 @@ function makeSparks(count, sprite) {
  * the stage
  * ------------------------------------------------------------------ */
 
-export function createStage(canvas, { quality, product }) {
+export function createStage(canvas, { quality, product, products }) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -258,9 +254,8 @@ export function createStage(canvas, { quality, product }) {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality.maxPixelRatio));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 1;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.05, 60);
@@ -271,7 +266,6 @@ export function createStage(canvas, { quality, product }) {
   const studio = buildStudio();
   const envTarget = pmrem.fromScene(studio, 0.035);
   scene.environment = envTarget.texture;
-  scene.environmentIntensity = 1.0;
   studio.traverse((o) => {
     o.geometry?.dispose();
     o.material?.dispose();
@@ -290,50 +284,46 @@ export function createStage(canvas, { quality, product }) {
     tex.anisotropy = maxAniso;
     tex.minFilter = THREE.LinearMipmapLinearFilter;
     tex.magFilter = THREE.LinearFilter;
-    tex.generateMipmaps = true;
     return tex;
   }
 
   const surfaceSheets = paintSurfaceSheets({ beadCount: quality.beads });
   const lidSheets = paintLidSheets();
 
-  const maps = {
-    colour: wrapTexture(paintColourSheet(product), { srgb: true }),
+  const shared = {
     orm: wrapTexture(surfaceSheets.orm),
     normal: wrapTexture(surfaceSheets.normal),
     lidColour: wrapTexture(lidSheets.colour, { srgb: true, repeat: false }),
     lidRoughness: wrapTexture(lidSheets.roughness, { repeat: false }),
   };
 
-  /** Colour sheets are the only per-flavour cost, so a tiny LRU is plenty. */
-  const sheetCache = new Map([[product.id, maps.colour]]);
-  const SHEET_LIMIT = 4;
-
-  function colourFor(next) {
-    if (sheetCache.has(next.id)) return sheetCache.get(next.id);
-    const tex = wrapTexture(paintColourSheet(next), { srgb: true });
-    sheetCache.set(next.id, tex);
-    if (sheetCache.size > SHEET_LIMIT) {
-      for (const [id, tex2] of sheetCache) {
-        if (id !== next.id && tex2 !== can.userData.materials.body.map) {
-          tex2.dispose();
-          sheetCache.delete(id);
-          break;
-        }
-      }
-    }
-    return tex;
+  /** Colour sheets are the only per-flavour cost. Painted once, kept. */
+  const sheetCache = new Map();
+  function colourFor(p) {
+    if (!sheetCache.has(p.id)) sheetCache.set(p.id, wrapTexture(paintColourSheet(p), { srgb: true }));
+    return sheetCache.get(p.id);
   }
 
-  /* ---------- the can ---------- */
-  const can = createCan({ segments: quality.segments, maps });
-  const canPivot = new THREE.Group(); // rotation lives here; the rig handles placement
-  canPivot.add(can);
-  const rig = new THREE.Group();
-  rig.add(canPivot);
-  scene.add(rig);
+  const maps = {
+    colour: colourFor(product),
+    orm: shared.orm,
+    normal: shared.normal,
+    lidColour: shared.lidColour,
+    lidRoughness: shared.lidRoughness,
+  };
 
-  /* ---------- floor, shadow, lights ---------- */
+  /* ---------- geometry, shared between the hero can and the pack ---------- */
+  const heroGeometries = buildCanGeometries({ segments: quality.segments });
+  let packGeometries = null;
+
+  const can = createCan({ maps, geometries: heroGeometries });
+  const canPivot = new THREE.Group();
+  canPivot.add(can);
+  const heroRig = new THREE.Group();
+  heroRig.add(canPivot);
+  scene.add(heroRig);
+
+  /* ---------- floor and contact shadow ---------- */
   const shadowSprite = new THREE.Mesh(
     new THREE.PlaneGeometry(2.5, 2.5),
     new THREE.MeshBasicMaterial({
@@ -341,18 +331,15 @@ export function createStage(canvas, { quality, product }) {
       transparent: true,
       opacity: 0.6,
       depthWrite: false,
-      blending: THREE.NormalBlending,
     })
   );
   shadowSprite.rotation.x = -Math.PI / 2;
   shadowSprite.position.y = 0.002;
   shadowSprite.renderOrder = -1;
-  rig.add(shadowSprite);
+  heroRig.add(shadowSprite);
 
-  // A dark, faintly reflective sweep. The alpha map dissolves it well inside
-  // its own radius — a visible floor edge is the fastest way to make a render
-  // look like a render.
-  const floorFade = new THREE.CanvasTexture(makeFloorFade());
+  // Dissolved well inside its own radius — a visible floor edge is the fastest
+  // way to make a render look like a render.
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(7, 64),
     new THREE.MeshStandardMaterial({
@@ -361,18 +348,18 @@ export function createStage(canvas, { quality, product }) {
       metalness: 0.14,
       envMapIntensity: 0.35,
       transparent: true,
-      alphaMap: floorFade,
+      alphaMap: new THREE.CanvasTexture(makeFloorFade()),
       depthWrite: false,
     })
   );
   floor.rotation.x = -Math.PI / 2;
-  rig.add(floor);
+  scene.add(floor);
 
+  /* ---------- lights ---------- */
   const key = new THREE.DirectionalLight(0xfff4ea, 2.4);
   key.position.set(-2.4, 4.4, 3.2);
   scene.add(key);
 
-  // Accent rim — retinted whenever the flavour changes.
   const rimWarm = new THREE.PointLight(new THREE.Color(product.accent), 16, 5.5, 2);
   rimWarm.position.set(1.45, 1.6, -1.15);
   scene.add(rimWarm);
@@ -381,8 +368,7 @@ export function createStage(canvas, { quality, product }) {
   rimCool.position.set(-1.1, 1.5, -1.1);
   scene.add(rimCool);
 
-  const fill = new THREE.HemisphereLight(0x2a3040, 0x05060a, 0.55);
-  scene.add(fill);
+  scene.add(new THREE.HemisphereLight(0x2a3040, 0x05060a, 0.55));
 
   /* ---------- particles ---------- */
   const dustSprite = new THREE.CanvasTexture(makeGlowSprite());
@@ -396,7 +382,9 @@ export function createStage(canvas, { quality, product }) {
   /* ---------- post ---------- */
   let composer = null;
   let bloomPass = null;
-  if (quality.bloom) {
+  let bloomEnabled = quality.bloom;
+
+  function buildComposer() {
     composer = new EffectComposer(renderer);
     composer.setPixelRatio(Math.min(devicePixelRatio || 1, quality.maxPixelRatio));
     composer.setSize(innerWidth, innerHeight);
@@ -404,6 +392,73 @@ export function createStage(canvas, { quality, product }) {
     bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.34, 0.55, 0.92);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
+  }
+  if (bloomEnabled) buildComposer();
+
+  /* ---------- the pack, built on first demand ---------- */
+  let pack = null;
+  const packMaterials = new Map();
+
+  function packMaterialFor(id) {
+    const key = id || '__empty';
+    if (packMaterials.has(key)) return packMaterials.get(key);
+    const p = products.find((x) => x.id === id) || product;
+    const mats = {
+      body: new THREE.MeshPhysicalMaterial({
+        map: colourFor(p),
+        roughnessMap: shared.orm,
+        metalnessMap: shared.orm,
+        normalMap: shared.normal,
+        normalScale: new THREE.Vector2(0.4, 0.4),
+        metalness: 1,
+        roughness: 1,
+        clearcoat: 0.5,
+        clearcoatRoughness: 0.24,
+        envMapIntensity: 1.3,
+      }),
+      lid: new THREE.MeshPhysicalMaterial({
+        map: shared.lidColour,
+        roughnessMap: shared.lidRoughness,
+        metalness: 1,
+        roughness: 1,
+        // Twelve lids side by side blow out at hero intensity.
+        envMapIntensity: 0.55,
+      }),
+    };
+    packMaterials.set(key, mats);
+    return mats;
+  }
+
+  function ensurePack() {
+    if (pack) return pack;
+    packGeometries = buildCanGeometries({ segments: quality.packSegments, tab: false });
+    const carton = paintCartonSheets(product.accent);
+    pack = createPack({
+      geometries: packGeometries,
+      materialFor: packMaterialFor,
+      cartonMap: wrapTexture(carton.colour, { srgb: true, repeat: false }),
+    });
+    pack.group.visible = false;
+    pack.group.scale.setScalar(0.001);
+    scene.add(pack.group);
+    return pack;
+  }
+
+  /* ---------- hero / pack blend ---------- */
+  let packBlend = 0;
+  function applyBlend() {
+    const b = packBlend;
+    const canScale = Math.max(0.0001, 1 - b * 1.35);
+    heroRig.scale.setScalar(canScale);
+    heroRig.position.y = -b * 0.55;
+    heroRig.visible = canScale > 0.02;
+    if (pack) {
+      const packScale = Math.max(0.0001, (b - 0.25) / 0.75);
+      pack.group.scale.setScalar(packScale);
+      pack.group.position.y = (1 - packScale) * -0.4;
+      pack.group.visible = packScale > 0.02;
+    }
+    floor.visible = b < 0.9;
   }
 
   /* ---------- loop ---------- */
@@ -413,6 +468,11 @@ export function createStage(canvas, { quality, product }) {
   let clock = 0;
   let onUpdate = null;
   let visible = true;
+
+  // Adaptive quality: if the device cannot hold a frame budget, shed load
+  // rather than letting the whole page stutter.
+  let slowFrames = 0;
+  let degraded = false;
 
   function resize() {
     const w = innerWidth;
@@ -428,17 +488,36 @@ export function createStage(canvas, { quality, product }) {
   }
 
   function drawFrame() {
-    if (composer) composer.render();
+    if (composer && bloomEnabled) composer.render();
     else renderer.render(scene, camera);
+  }
+
+  function degrade() {
+    if (degraded) return;
+    degraded = true;
+    bloomEnabled = false;
+    renderer.setPixelRatio(Math.min(1.25, renderer.getPixelRatio()));
+    dust.material.uniforms.uOpacity.value *= 0.5;
+    resize();
   }
 
   function tick(now) {
     rafId = requestAnimationFrame(tick);
-    const dt = Math.min((now - last) / 1000, 0.05);
+    const raw = (now - last) / 1000;
+    const dt = Math.min(raw, 0.05);
     last = now;
     clock += dt;
+
+    if (visible && !degraded) {
+      // ~22 fps sustained for a second is the point where shedding wins.
+      if (raw > 0.045) slowFrames++;
+      else slowFrames = Math.max(0, slowFrames - 1);
+      if (slowFrames > 45) degrade();
+    }
+
     dust.material.uniforms.uTime.value = clock;
     sparks.material.uniforms.uTime.value = clock;
+    pack?.update(dt);
     onUpdate?.(dt, clock);
     if (visible) drawFrame();
   }
@@ -450,7 +529,7 @@ export function createStage(canvas, { quality, product }) {
     camera,
     can,
     canPivot,
-    rig,
+    rig: heroRig,
     dimensions: CAN_DIMENSIONS,
     quality,
 
@@ -464,38 +543,27 @@ export function createStage(canvas, { quality, product }) {
       last = performance.now();
       rafId = requestAnimationFrame(tick);
     },
-
     stop() {
       running = false;
       cancelAnimationFrame(rafId);
     },
-
-    /** Keeps the loop alive (for timeline state) but skips the draw call. */
+    /** Keeps timeline state alive but skips the draw call. */
     setVisible(v) {
       visible = v;
     },
-
     renderOnce: drawFrame,
     resize,
 
-    setDust(v) {
-      dust.material.uniforms.uOpacity.value = v;
-    },
-    setBurst(v) {
-      sparks.material.uniforms.uBurst.value = v;
-    },
-    setExposure(v) {
-      renderer.toneMappingExposure = v;
-    },
-    setBloom(v) {
-      if (bloomPass) bloomPass.strength = v;
-    },
+    setDust: (v) => (dust.material.uniforms.uOpacity.value = v),
+    setBurst: (v) => (sparks.material.uniforms.uBurst.value = v),
+    setExposure: (v) => (renderer.toneMappingExposure = v),
+    setBloom: (v) => bloomPass && (bloomPass.strength = v),
     setAccentPower(v) {
       rimWarm.intensity = 16 * v;
       rimCool.intensity = 5 * v;
     },
 
-    /** Swap the printed sleeve and retint everything that keys off the flavour. */
+    /** Swap the printed sleeve and retint everything keyed to the flavour. */
     setFlavour(next) {
       const body = can.userData.materials.body;
       body.map = colourFor(next);
@@ -503,12 +571,27 @@ export function createStage(canvas, { quality, product }) {
       rimWarm.color.set(next.accent);
       sparks.material.uniforms.uTint.value.set(next.accent).lerp(new THREE.Color('#ffffff'), 0.4);
       dust.material.uniforms.uTint.value.set(next.accent).lerp(new THREE.Color('#ffffff'), 0.82);
+      pack?.tintTray(next.accent);
+    },
+
+    /* ---- pack ---- */
+    ensurePack,
+    setPackContents(ids) {
+      ensurePack().setContents(ids);
+    },
+    setPackBlend(v) {
+      packBlend = Math.max(0, Math.min(1, v));
+      if (packBlend > 0.001) ensurePack();
+      applyBlend();
+    },
+    get packGroup() {
+      return pack?.group ?? null;
     },
 
     /**
      * Render one product on a plain backdrop and hand back a PNG. Used to fill
-     * the shop grid with real photography of the real geometry, generated once
-     * while the loader is still up so nothing flashes on screen.
+     * the shop grid with real photography of the real geometry, generated while
+     * the loader is still up so nothing flashes on screen.
      */
     capture(next, width, height) {
       const prevSize = new THREE.Vector2();
@@ -525,24 +608,24 @@ export function createStage(canvas, { quality, product }) {
       const dustOpacity = dust.material.uniforms.uOpacity.value;
       const burst = sparks.material.uniforms.uBurst.value;
       const floorVisible = floor.visible;
-      const shadowVisible = shadowSprite.visible;
+      const heroScale = heroRig.scale.x;
+      const heroY = heroRig.position.y;
 
       try {
         dust.material.uniforms.uOpacity.value = 0;
         sparks.material.uniforms.uBurst.value = 0;
         floor.visible = false;
-        shadowSprite.visible = true;
+        heroRig.visible = true;
+        heroRig.scale.setScalar(1);
+        heroRig.position.y = 0;
         stage.setFlavour(next);
 
         const camX = 0.72;
         const camZ = 4.6;
         // u = 0.25 of the sleeve sits on +X, so a quarter turn back brings a
-        // printed face to camera; the azimuth term keeps it square as the
-        // camera is offset.
+        // printed face to camera; the azimuth term keeps it square.
         canPivot.rotation.y = -Math.PI / 2 + Math.atan2(camX, camZ);
 
-        // Card thumbnails are viewed small on a dark ground, so they carry a
-        // little more exposure than the hero does.
         renderer.toneMappingExposure = 1.32;
         renderer.setPixelRatio(1);
         renderer.setSize(width, height, false);
@@ -560,7 +643,8 @@ export function createStage(canvas, { quality, product }) {
         dust.material.uniforms.uOpacity.value = dustOpacity;
         sparks.material.uniforms.uBurst.value = burst;
         floor.visible = floorVisible;
-        shadowSprite.visible = shadowVisible;
+        heroRig.scale.setScalar(heroScale);
+        heroRig.position.y = heroY;
         can.userData.materials.body.map = prevBody;
         can.userData.materials.body.needsUpdate = true;
         rimWarm.color.copy(prevRim);
@@ -573,6 +657,7 @@ export function createStage(canvas, { quality, product }) {
         camera.position.copy(prevPos);
         camera.quaternion.copy(prevQuat);
         camera.updateProjectionMatrix();
+        applyBlend();
       }
     },
 
@@ -581,13 +666,14 @@ export function createStage(canvas, { quality, product }) {
       composer?.dispose();
       envTarget.dispose();
       pmrem.dispose();
+      pack?.dispose();
       scene.traverse((o) => {
         o.geometry?.dispose();
         if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
         else o.material?.dispose();
       });
       sheetCache.forEach((t) => t.dispose());
-      Object.values(maps).forEach((t) => t.dispose());
+      Object.values(shared).forEach((t) => t.dispose());
       renderer.dispose();
     },
   };

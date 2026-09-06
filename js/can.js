@@ -213,14 +213,27 @@ function tabGeometry() {
  * ------------------------------------------------------------------ */
 
 /**
+ * Geometry only, so the hero can and the twelve cans in the pack builder can
+ * share one buffer set instead of twelve.
+ */
+export function buildCanGeometries({ segments = 160, tab = true } = {}) {
+  const body = new THREE.LatheGeometry(bodyProfile(), segments);
+  remapBodyUVs(body);
+  const lid = new THREE.LatheGeometry(lidProfile(), segments);
+  planarUVs(lid, RIM_INNER_R);
+  return { body, lid, tab: tab ? tabGeometry() : null };
+}
+
+export const TAB_OFFSET = { y: LID_Y + 0.0075, z: -0.012 };
+
+/**
  * Build the can. `maps` carries the canvases from artwork.js; the caller owns
  * texture lifecycle so labels can be swapped without rebuilding geometry.
  */
-export function createCan({ segments = 160, maps }) {
+export function createCan({ segments = 160, maps, geometries = null }) {
   const group = new THREE.Group();
-
-  const bodyGeo = new THREE.LatheGeometry(bodyProfile(), segments);
-  remapBodyUVs(bodyGeo);
+  const geo = geometries || buildCanGeometries({ segments });
+  const bodyGeo = geo.body;
 
   const bodyMat = new THREE.MeshPhysicalMaterial({
     map: maps.colour,
@@ -239,8 +252,7 @@ export function createCan({ segments = 160, maps }) {
   const body = new THREE.Mesh(bodyGeo, bodyMat);
   group.add(body);
 
-  const lidGeo = new THREE.LatheGeometry(lidProfile(), segments);
-  planarUVs(lidGeo, RIM_INNER_R);
+  const lidGeo = geo.lid;
   const lidMat = new THREE.MeshPhysicalMaterial({
     map: maps.lidColour,
     roughnessMap: maps.lidRoughness,
@@ -257,7 +269,7 @@ export function createCan({ segments = 160, maps }) {
     roughness: 0.26,
     envMapIntensity: 1.3,
   });
-  const tab = new THREE.Mesh(tabGeometry(), tabMat);
+  const tab = new THREE.Mesh(geo.tab || tabGeometry(), tabMat);
   tab.position.set(0, LID_Y + 0.0075, -0.012);
   tab.rotation.y = Math.PI * 0.5;
   group.add(tab);

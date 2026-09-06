@@ -1,14 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>KESTRA — Sparkling energy, engineered</title>
-<meta name="description" content="Green-coffee caffeine buffered with L-theanine, in a 355 mL can. Six flavours, zero crash. Free shipping over $45.">
+<title>KESTRA — Sparkling energy, engineered | Saudi Arabia</title>
+<meta name="description" content="Green-coffee caffeine buffered with L-theanine, in a 355 mL can. Six flavours, zero crash. Free delivery across the Kingdom over SAR 200.">
 <meta name="theme-color" content="#07080B">
+<link rel="canonical" href="https://kestra.sa/">
 <meta property="og:title" content="KESTRA — Sparkling energy, engineered">
-<meta property="og:description" content="Green-coffee caffeine buffered with L-theanine. Six flavours, zero crash.">
+<meta property="og:description" content="Green-coffee caffeine buffered with L-theanine. Six flavours, zero crash. Delivered across Saudi Arabia.">
 <meta property="og:type" content="website">
+<meta property="og:locale" content="en_SA">
+<meta property="og:locale:alternate" content="ar_SA">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="en" href="https://kestra.sa/">
+<link rel="alternate" hreflang="ar" href="https://kestra.sa/ar/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='9' fill='none' stroke='%23FF6B2C' stroke-width='2'/><ellipse cx='12' cy='12' rx='3.9' ry='9' fill='none' stroke='%23FF6B2C' stroke-width='2'/></svg>">
 
 <link rel="preload" href="./assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
@@ -25,14 +31,33 @@
 </script>
 <link rel="modulepreload" href="./vendor/three/three.module.min.js">
 <link rel="modulepreload" href="./js/main.js">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Kestra Beverage Co.",
+  "url": "https://kestra.sa/",
+  "email": "hello@kestra.sa",
+  "telephone": "+966 11 200 4470",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "King Fahd Road, Al Olaya",
+    "addressLocality": "Riyadh",
+    "postalCode": "12214",
+    "addressCountry": "SA"
+  },
+  "areaServed": "SA"
+}
+</script>
 </head>
 
 <body class="is-intro">
 
-<a class="skip-link" href="#shop">Skip to the shop</a>
+<a class="skip-link" href="#shop" data-i18n="nav.skip">Skip to the shop</a>
 
 <!-- ─────────────────────────  loader  ───────────────────────── -->
-<div class="loader" data-loader>
+<div class="loader" data-loader role="status" aria-live="polite">
   <div class="loader__mark" aria-hidden="true">
     <svg viewBox="0 0 24 24" width="34" height="34">
       <circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.2"/>
@@ -40,8 +65,8 @@
       <path d="M2.8 12h18.4" stroke="currentColor" stroke-width="1.2"/>
     </svg>
   </div>
-  <p class="loader__text">Chilling the can</p>
-  <div class="loader__bar"><span></span></div>
+  <p class="loader__text" data-i18n="loader.text">Chilling the can</p>
+  <div class="loader__bar"><span data-loader-bar></span></div>
 </div>
 
 <!-- ─────────────────────  the 3D stage  ───────────────────── -->
@@ -54,10 +79,10 @@
     <h1 class="intro__word" aria-label="Kestra">
       <span>K</span><span>E</span><span>S</span><span>T</span><span>R</span><span>A</span>
     </h1>
-    <p class="intro__claim">Sparkling energy, engineered</p>
+    <p class="intro__claim" data-i18n="brand.claim">Sparkling energy, engineered</p>
   </div>
   <button class="intro__skip" type="button" data-skip>
-    Skip intro
+    <span data-i18n="intro.skip">Skip intro</span>
     <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M3 3l5 5-5 5M9 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
 </div>
@@ -66,7 +91,7 @@
 <header class="header" data-header>
   <div class="header__progress" data-progress aria-hidden="true"></div>
   <div class="shell header__inner">
-    <a class="brand" href="#top" aria-label="Kestra, home">
+    <a class="brand" href="#top" data-i18n-aria="nav.home" aria-label="Kestra, home">
       <svg class="brand__mark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
         <circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
         <ellipse cx="12" cy="12" rx="4" ry="9.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
@@ -76,22 +101,25 @@
     </a>
 
     <nav class="nav" data-nav aria-label="Primary">
-      <a href="#shop">Shop</a>
-      <a href="#mix">Build a pack</a>
-      <a href="#formula">Formula</a>
-      <a href="#reviews">Reviews</a>
-      <a href="#faq">FAQ</a>
+      <a href="#shop" data-i18n="nav.shop">Shop</a>
+      <a href="#mix" data-i18n="nav.pack">Build a pack</a>
+      <a href="#formula" data-i18n="nav.formula">Formula</a>
+      <a href="#reviews" data-i18n="nav.reviews">Reviews</a>
+      <a href="#faq" data-i18n="nav.faq">FAQ</a>
     </nav>
 
     <div class="header__actions">
-      <button class="cart-btn" type="button" data-cart-open aria-label="Open cart">
+      <button class="lang-btn" type="button" data-lang-toggle data-i18n-aria="nav.langAria" aria-label="Switch to Arabic">
+        <span data-i18n="nav.lang">العربية</span>
+      </button>
+      <button class="cart-btn" type="button" data-cart-open data-i18n-aria="nav.cartOpen" aria-label="Open cart">
         <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
           <path d="M4 6h12l-1 10H5L4 6Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
           <path d="M7.4 6V4.9a2.6 2.6 0 0 1 5.2 0V6" fill="none" stroke="currentColor" stroke-width="1.4"/>
         </svg>
         <span class="cart-btn__count" data-cart-count data-empty="true">0</span>
       </button>
-      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-label="Menu">
+      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" data-i18n-aria="nav.menu" aria-label="Menu">
         <span></span><span></span>
       </button>
     </div>
@@ -105,55 +133,17 @@
 <!-- ──────────────────────────  hero  ────────────────────────── -->
 <section class="hero" id="hero">
   <div class="shell hero__grid">
-    <div class="hero__copy">
-      <p class="eyebrow hero__eyebrow">
-        <span class="eyebrow__dot" aria-hidden="true"></span>
-        No. <span data-hero-index>01</span> — <span data-hero-name>Solstice</span>
-      </p>
-      <h2 class="display hero__title">
-        Energy that<br>holds its line.
-      </h2>
-      <p class="hero__lede">
-        Caffeine from unroasted arabica, buffered one-to-one with L-theanine. It comes up over
-        forty minutes, sits flat for four hours, and leaves without taking the afternoon with it.
-      </p>
-
-      <div class="hero__cta">
-        <a class="btn btn--solid" href="#shop">Shop the range</a>
-        <a class="btn btn--ghost" href="#mix">Build a mixed 12</a>
-      </div>
-
-      <dl class="hero__stats">
-        <div><dt>Caffeine</dt><dd><span data-hero-caffeine>180</span><small>mg</small></dd></div>
-        <div><dt>Sugar</dt><dd>0<small>g</small></dd></div>
-        <div><dt>Volume</dt><dd>355<small>mL</small></dd></div>
-        <div><dt>Rated</dt><dd>4.8<small>/5</small></dd></div>
-      </dl>
-
-      <div class="hero__rail">
-        <p class="hero__rail-label">Turn the can</p>
-        <div class="flavour-rail" data-flavour-rail role="group" aria-label="Choose a flavour to preview"></div>
-        <p class="hero__rail-note" data-hero-flavour>Blood Orange · Bergamot</p>
-      </div>
-    </div>
+    <div class="hero__copy" data-hero-panel></div>
   </div>
-
   <div class="hero__scroll" aria-hidden="true">
-    <span>Scroll</span>
+    <span data-i18n="hero.scroll">Scroll</span>
     <span class="hero__scroll-line"></span>
   </div>
 </section>
 
 <!-- ─────────────────────────  ticker  ───────────────────────── -->
 <div class="ticker" aria-hidden="true">
-  <div class="ticker__track">
-    <span>Zero sugar</span><i>◆</i><span>200 mg L-theanine</span><i>◆</i><span>No crash</span><i>◆</i>
-    <span>Free shipping over $45</span><i>◆</i><span>Ships same day</span><i>◆</i>
-    <span>73% recycled aluminium</span><i>◆</i>
-    <span>Zero sugar</span><i>◆</i><span>200 mg L-theanine</span><i>◆</i><span>No crash</span><i>◆</i>
-    <span>Free shipping over $45</span><i>◆</i><span>Ships same day</span><i>◆</i>
-    <span>73% recycled aluminium</span><i>◆</i>
-  </div>
+  <div class="ticker__track" data-ticker></div>
 </div>
 
 <!-- ──────────────────────────  shop  ────────────────────────── -->
@@ -161,23 +151,20 @@
   <div class="shell">
     <header class="section__head reveal">
       <div>
-        <p class="eyebrow">The range</p>
-        <h2 class="display section__title">Six cans. One curve.</h2>
+        <p class="eyebrow" data-i18n="shop.eyebrow">The range</p>
+        <h2 class="display section__title" data-i18n="shop.title">Six cans. One curve.</h2>
       </div>
-      <p class="section__lede">
-        Every flavour runs the same formula underneath — what changes is the fruit, the acid and
-        how hard the caffeine is pushed. Start with Solstice if you have no idea.
-      </p>
+      <p class="section__lede" data-i18n="shop.lede"></p>
     </header>
 
     <div class="shop__bar reveal">
-      <div class="filters" role="group" aria-label="Filter the range">
-        <button class="chip is-active" type="button" data-filter="all" aria-pressed="true">Everything</button>
-        <button class="chip" type="button" data-filter="zero" aria-pressed="false">Zero sugar</button>
-        <button class="chip" type="button" data-filter="strong" aria-pressed="false">180 mg+</button>
-        <button class="chip" type="button" data-filter="new" aria-pressed="false">New</button>
+      <div class="filters" role="group" data-i18n-aria="shop.filterAria" aria-label="Filter the range">
+        <button class="chip is-active" type="button" data-filter="all" aria-pressed="true" data-i18n="shop.filterAll">Everything</button>
+        <button class="chip" type="button" data-filter="zero" aria-pressed="false" data-i18n="shop.filterZero">Zero sugar</button>
+        <button class="chip" type="button" data-filter="strong" aria-pressed="false" data-i18n="shop.filterStrong">180 mg+</button>
+        <button class="chip" type="button" data-filter="new" aria-pressed="false" data-i18n="shop.filterNew">New</button>
       </div>
-      <span class="shop__count" data-grid-count>6 of 6</span>
+      <span class="shop__count" data-grid-count></span>
     </div>
 
     <div class="grid" data-shop-grid></div>
@@ -185,44 +172,59 @@
 </section>
 
 <!-- ────────────────────────  the mixer  ─────────────────────── -->
-<section class="section section--tint" id="mix">
+<section class="section section--stage" id="mix">
   <div class="shell mix">
     <div class="mix__intro reveal">
-      <p class="eyebrow">Build a pack</p>
-      <h2 class="display section__title">Twelve cans,<br>your split.</h2>
-      <p class="section__lede">
-        Nobody drinks one flavour forever. Set the ratio you actually want and we pack it that way —
-        same price as any other twelve.
-      </p>
-      <div class="mix__meter" data-mix-meter role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="12" aria-label="Cans selected">
+      <p class="eyebrow" data-i18n="pack.eyebrow">Build a pack</p>
+      <h2 class="display section__title" data-i18n-html="pack.title">Twelve cans,<br>your split.</h2>
+      <p class="section__lede" data-i18n="pack.lede"></p>
+
+      <div class="mix__meter" data-mix-meter role="progressbar" aria-valuemin="0" aria-valuemax="12" aria-valuenow="12"
+           data-i18n-aria="pack.aria" aria-label="Cans selected">
         <span></span>
       </div>
-      <p class="mix__count"><b data-mix-count>12 of 12</b> selected</p>
-      <button class="btn btn--solid btn--wide" type="button" data-mix-add>Add mixed pack</button>
+      <p class="mix__count"><b data-mix-count>12 / 12</b> <span data-i18n="pack.selected">selected</span> · <b data-mix-price></b></p>
+
     </div>
+
+    <!-- The tray itself is rendered on the fixed canvas behind this column. -->
+    <div class="mix__stageRoom" data-i18n-aria="pack.boxAria" aria-label="Live preview of your twelve-pack" role="img"></div>
+
+    <div class="mix__actions">
+      <button class="btn btn--solid btn--wide" type="button" data-mix-add>Add mixed pack</button>
+      <div class="mix__minor">
+        <button class="btn btn--ghost btn--sm" type="button" data-mix-fill data-i18n="pack.fill">Fill the rest</button>
+        <button class="btn btn--ghost btn--sm" type="button" data-mix-clear data-i18n="pack.clear">Clear</button>
+      </div>
+    </div>
+
     <div class="mix__list reveal" data-mixer></div>
   </div>
 </section>
 
 <!-- ────────────────────────  formula  ──────────────────────── -->
-<section class="section" id="formula">
+<section class="section section--stage" id="formula">
   <div class="shell">
     <header class="section__head reveal">
       <div>
-        <p class="eyebrow">The formula</p>
-        <h2 class="display section__title">Four things,<br>done properly.</h2>
+        <p class="eyebrow" data-i18n="formula.eyebrow">The formula</p>
+        <h2 class="display section__title" data-i18n-html="formula.title">Four things,<br>done properly.</h2>
       </div>
-      <p class="section__lede">
-        There is no proprietary blend and no ingredient here to make the label look busy.
-        Everything is dosed at the level the research actually used.
-      </p>
+      <p class="section__lede" data-i18n="formula.lede"></p>
     </header>
 
-    <ol class="formula" data-formula></ol>
+    <div class="formula-wrap">
+      <ol class="formula" data-formula></ol>
+      <!-- The can is rendered into this column on the fixed canvas behind. -->
+      <div class="formula__room" aria-hidden="true"></div>
+    </div>
 
-    <div class="specs reveal">
-      <h3 class="specs__title">Specification</h3>
-      <dl class="specs__list" data-specs></dl>
+    <div class="facts">
+      <div class="nutrition reveal" data-nutrition></div>
+      <div class="specs reveal">
+        <h3 class="specs__title" data-i18n="formula.specTitle">Specification</h3>
+        <dl class="specs__list" data-specs></dl>
+      </div>
     </div>
   </div>
 </section>
@@ -232,14 +234,14 @@
   <div class="shell">
     <header class="section__head reveal">
       <div>
-        <p class="eyebrow">Reviews</p>
-        <h2 class="display section__title">12,175 ratings.<br>4.8 average.</h2>
+        <p class="eyebrow" data-i18n="reviews.eyebrow">Reviews</p>
+        <h2 class="display section__title" data-i18n-html="reviews.title">Written by people<br>who bought it.</h2>
       </div>
-      <p class="section__lede">
-        Collected after delivery, unedited, and published including the three-star ones.
-      </p>
+      <p class="section__lede" data-i18n="reviews.lede"></p>
     </header>
-    <div class="reviews reveal" data-reviews></div>
+
+    <div class="rating reveal" data-review-summary></div>
+    <div class="reviews" data-reviews></div>
   </div>
 </section>
 
@@ -248,8 +250,8 @@
   <div class="shell faq-shell">
     <header class="section__head section__head--stack reveal">
       <div>
-        <p class="eyebrow">Questions</p>
-        <h2 class="display section__title">Before you order.</h2>
+        <p class="eyebrow" data-i18n="faq.eyebrow">Questions</p>
+        <h2 class="display section__title" data-i18n="faq.title">Before you order.</h2>
       </div>
     </header>
     <div class="faq reveal" data-faq></div>
@@ -260,13 +262,13 @@
 <section class="section signup">
   <div class="shell signup__inner reveal">
     <div>
-      <h2 class="display signup__title">Get the next drop first.</h2>
-      <p>One email a month. New flavours, restocks, and nothing else.</p>
+      <h2 class="display signup__title" data-i18n="signup.title">Get the next drop first.</h2>
+      <p data-i18n="signup.lede"></p>
     </div>
     <form class="signup__form" data-newsletter novalidate>
-      <label class="sr-only" for="email">Email address</label>
-      <input id="email" type="email" name="email" placeholder="you@example.com" required autocomplete="email">
-      <button class="btn btn--solid" type="submit">Join</button>
+      <label class="sr-only" for="email" data-i18n="signup.email">Email address</label>
+      <input id="email" type="email" name="email" data-i18n-placeholder="signup.placeholder" placeholder="you@example.com" required autocomplete="email">
+      <button class="btn btn--solid" type="submit" data-i18n="signup.cta">Join</button>
     </form>
   </div>
 </section>
@@ -277,7 +279,7 @@
 <footer class="footer">
   <div class="shell footer__inner">
     <div class="footer__brand">
-      <a class="brand" href="#top" aria-label="Kestra, home">
+      <a class="brand" href="#top" data-i18n-aria="nav.home" aria-label="Kestra, home">
         <svg class="brand__mark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
           <circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
           <ellipse cx="12" cy="12" rx="4" ry="9.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
@@ -285,35 +287,33 @@
         </svg>
         <span class="brand__word">KESTRA</span>
       </a>
-      <p class="footer__origin">Named for the kestrel, which hangs dead still in a
-        forty-mile wind by correcting continuously. Not more energy — better held.</p>
-      <p>Kestra Beverage Co.<br>1140 Glendale Ave, Reno NV 89502</p>
+      <p class="footer__origin" data-i18n="brand.origin"></p>
+      <p data-i18n-html="footer.address"></p>
+      <p class="footer__vat" data-i18n="footer.vat"></p>
     </div>
     <nav class="footer__col" aria-label="Shop">
-      <h3>Shop</h3>
-      <a href="#shop">All flavours</a>
-      <a href="#mix">Build a pack</a>
-      <a href="#shop">Subscribe</a>
+      <h3 data-i18n="footer.shop">Shop</h3>
+      <a href="#shop" data-i18n="footer.all">All flavours</a>
+      <a href="#mix" data-i18n="nav.pack">Build a pack</a>
+      <a href="#shop" data-i18n="footer.subscribe">Subscribe</a>
     </nav>
     <nav class="footer__col" aria-label="Company">
-      <h3>Company</h3>
-      <a href="#formula">Formula</a>
-      <a href="#reviews">Reviews</a>
-      <a href="#faq">FAQ</a>
+      <h3 data-i18n="footer.company">Company</h3>
+      <a href="#formula" data-i18n="nav.formula">Formula</a>
+      <a href="#reviews" data-i18n="nav.reviews">Reviews</a>
+      <a href="#faq" data-i18n="nav.faq">FAQ</a>
     </nav>
     <div class="footer__col">
-      <h3>Support</h3>
-      <a href="mailto:hello@kestra.co">hello@kestra.co</a>
-      <a href="tel:+18005550142">+1 800 555 0142</a>
-      <p class="footer__hours">Mon–Fri, 8am–6pm PT</p>
+      <h3 data-i18n="footer.support">Support</h3>
+      <a href="mailto:hello@kestra.sa">hello@kestra.sa</a>
+      <a href="tel:+966112004470" dir="ltr">+966 11 200 4470</a>
+      <p class="footer__hours" data-i18n="footer.hours"></p>
+      <p class="footer__hours" data-i18n="footer.delivery"></p>
     </div>
   </div>
   <div class="shell footer__base">
-    <p>© <span data-year>2026</span> Kestra Beverage Co. All rights reserved.</p>
-    <p class="footer__legal">
-      Not recommended for children or people sensitive to caffeine. This is a demonstration
-      storefront — no order is placed and no payment is taken.
-    </p>
+    <p>© <span data-year>2026</span> <span data-i18n="footer.rights">All rights reserved.</span></p>
+    <p class="footer__legal" data-i18n="footer.legal"></p>
   </div>
 </footer>
 
@@ -322,45 +322,53 @@
   <div class="cart__scrim" data-cart-scrim></div>
   <div class="cart__panel">
     <header class="cart__head">
-      <h2 id="cart-title">Your cart</h2>
-      <button class="icon-btn" type="button" data-cart-close aria-label="Close cart" data-autofocus>
+      <button class="icon-btn cart__back" type="button" data-pay-back aria-label="Back">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2 id="cart-title" data-i18n="cart.title">Your cart</h2>
+      <button class="icon-btn" type="button" data-cart-close data-i18n-aria="cart.close" aria-label="Close cart" data-autofocus>
         <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       </button>
     </header>
 
-    <div class="cart__ship">
-      <div class="cart__ship-bar" data-ship-progress data-done="false"><span></span></div>
-      <p data-ship-note>$45.00 away from free shipping</p>
+    <div class="cart__body">
+      <div class="cart__ship">
+        <div class="cart__ship-bar" data-ship-progress data-done="false"><span></span></div>
+        <p data-ship-note></p>
+      </div>
+      <div class="cart__items" data-cart-items></div>
     </div>
 
-    <div class="cart__items" data-cart-items></div>
+    <div class="cart__pay" data-pay></div>
 
     <footer class="cart__foot">
+      <p class="cart__eta" data-eta></p>
       <form class="promo" data-promo-form>
-        <label class="sr-only" for="promo">Promo code</label>
-        <input id="promo" data-promo-input type="text" placeholder="Promo code" autocomplete="off" spellcheck="false">
-        <button class="btn btn--ghost btn--sm" type="submit">Apply</button>
+        <label class="sr-only" for="promo" data-i18n="cart.promo">Promo code</label>
+        <input id="promo" data-promo-input type="text" data-i18n-placeholder="cart.promo" placeholder="Promo code" autocomplete="off" spellcheck="false">
+        <button class="btn btn--ghost btn--sm" type="submit" data-i18n="cart.apply">Apply</button>
       </form>
       <dl class="cart__sums">
-        <div><dt>Subtotal</dt><dd data-sum-subtotal>$0.00</dd></div>
-        <div data-sum-discount-row hidden><dt>Discount</dt><dd data-sum-discount>− $0.00</dd></div>
-        <div><dt>Shipping</dt><dd data-sum-shipping>Free</dd></div>
-        <div class="cart__total"><dt>Total</dt><dd data-sum-total>$0.00</dd></div>
+        <div><dt data-i18n="cart.subtotal">Subtotal</dt><dd data-sum-subtotal></dd></div>
+        <div data-sum-discount-row hidden><dt data-i18n="cart.discount">Discount</dt><dd data-sum-discount></dd></div>
+        <div><dt data-i18n="cart.shipping">Delivery</dt><dd data-sum-shipping></dd></div>
+        <div class="cart__total"><dt data-i18n="cart.total">Total</dt><dd data-sum-total></dd></div>
       </dl>
-      <button class="btn btn--solid btn--wide" type="button" data-checkout disabled>Checkout</button>
-      <p class="cart__note">Demonstration checkout — nothing is charged.</p>
+      <p class="cart__vat" data-sum-vat></p>
+      <button class="btn btn--solid btn--wide" type="button" data-checkout disabled data-i18n="cart.checkout">Checkout</button>
+      <p class="cart__note" data-i18n="pay.demo"></p>
     </footer>
   </div>
 </aside>
 
-<!-- ───────────────────────  quick look  ─────────────────────── -->
-<div class="quick" data-quickview hidden role="dialog" aria-modal="true" aria-labelledby="quickview-title">
-  <div class="quick__scrim" data-quick-scrim></div>
-  <div class="quick__panel">
-    <button class="icon-btn quick__close" type="button" data-quick-close aria-label="Close" data-autofocus>
+<!-- ───────────────────  product detail modal  ─────────────────── -->
+<div class="pdp" data-pdp hidden role="dialog" aria-modal="true" aria-labelledby="pdp-title">
+  <div class="pdp__scrim" data-pdp-scrim></div>
+  <div class="pdp__panel">
+    <button class="icon-btn pdp__close" type="button" data-pdp-close data-i18n-aria="pdp.close" aria-label="Close" data-autofocus>
       <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </button>
-    <div class="quick__body" data-quickview-body></div>
+    <div class="pdp__body" data-pdp-body></div>
   </div>
 </div>
 
