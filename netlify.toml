@@ -1,0 +1,14 @@
+# Static site, no build step — the repo root is the deployable artifact.
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/assets/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
