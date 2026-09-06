@@ -915,4 +915,141 @@ export function paintCartonSheets(accent = '#FF6B2C') {
   return { colour: col.canvas };
 }
 
+/* ------------------------------------------------------------------ *
+ * the factory
+ * ------------------------------------------------------------------ */
+
+/** Brushed stainless: linear grain, the way rolled plate actually looks. */
+export function makeSteelSheets() {
+  const W = 1024;
+  const H = 1024;
+  const col = surface(W, H);
+  const orm = surface(W, H);
+  const c = col.ctx;
+  const r = orm.ctx;
+  const rng = seeded(0x57ee11);
+
+  c.fillStyle = '#8d949c';
+  c.fillRect(0, 0, W, H);
+  r.fillStyle = 'rgb(255,72,255)'; // roughness 0.28, fully metallic
+  r.fillRect(0, 0, W, H);
+
+  // The grain. Long, fine, all running the same way.
+  for (let i = 0; i < 5200; i++) {
+    const y = rng() * H;
+    const x = rng() * W;
+    const len = 60 + rng() * 420;
+    const a = 0.04 + rng() * 0.12;
+    c.strokeStyle = rng() > 0.5 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`;
+    c.lineWidth = 0.5 + rng() * 1.4;
+    c.beginPath();
+    c.moveTo(x, y);
+    c.lineTo(x + len, y + (rng() - 0.5) * 1.5);
+    c.stroke();
+
+    r.strokeStyle = rng() > 0.5 ? 'rgba(255,110,255,0.5)' : 'rgba(255,44,255,0.5)';
+    r.lineWidth = 0.6 + rng() * 1.6;
+    r.beginPath();
+    r.moveTo(x, y);
+    r.lineTo(x + len, y);
+    r.stroke();
+  }
+
+  // Weld seams and wear, so a tank does not read as a perfect primitive.
+  for (let i = 0; i < 5; i++) {
+    const y = rng() * H;
+    c.strokeStyle = 'rgba(60,66,74,0.4)';
+    c.lineWidth = 3 + rng() * 4;
+    c.beginPath();
+    c.moveTo(0, y);
+    c.lineTo(W, y + (rng() - 0.5) * 6);
+    c.stroke();
+  }
+
+  return { colour: col.canvas, orm: orm.canvas };
+}
+
+/**
+ * A tiling ripple normal map, built as a height field from overlapping circular
+ * waves and differentiated. Cheaper and more convincing than stacked noise:
+ * real liquid in a vessel has concentric wavefronts, not fractal fuzz.
+ */
+export function makeLiquidNormal(size = 512) {
+  const { canvas, ctx } = surface(size, size);
+  const img = ctx.createImageData(size, size);
+  const rng = seeded(0x1119d1);
+
+  const sources = Array.from({ length: 7 }, () => ({
+    x: rng() * size,
+    y: rng() * size,
+    k: 0.05 + rng() * 0.11,
+    a: 0.4 + rng() * 0.8,
+    p: rng() * Math.PI * 2,
+  }));
+
+  const height = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      let h = 0;
+      for (const s of sources) {
+        // Wrap the distance so the map tiles without a visible seam.
+        const dx = Math.min(Math.abs(x - s.x), size - Math.abs(x - s.x));
+        const dy = Math.min(Math.abs(y - s.y), size - Math.abs(y - s.y));
+        h += Math.sin(Math.hypot(dx, dy) * s.k + s.p) * s.a;
+      }
+      height[y * size + x] = h;
+    }
+  }
+
+  const at = (x, y) => height[((y + size) % size) * size + ((x + size) % size)];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      const nx = (at(x - 1, y) - at(x + 1, y)) * 0.5;
+      const ny = (at(x, y - 1) - at(x, y + 1)) * 0.5;
+      const len = Math.hypot(nx, ny, 1);
+      img.data[i] = Math.round((nx / len) * 0.5 * 255 + 127.5);
+      img.data[i + 1] = Math.round((ny / len) * 0.5 * 255 + 127.5);
+      img.data[i + 2] = Math.round((1 / len) * 0.5 * 255 + 127.5);
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas;
+}
+
+/** Ribbed conveyor belting: dark rubber with regular cleats. */
+export function makeBeltSheets() {
+  const W = 256;
+  const H = 256;
+  const col = surface(W, H);
+  const orm = surface(W, H);
+  const c = col.ctx;
+  const r = orm.ctx;
+
+  c.fillStyle = '#1b1e23';
+  c.fillRect(0, 0, W, H);
+  r.fillStyle = 'rgb(255,168,10)'; // rough rubber, barely metallic
+  r.fillRect(0, 0, W, H);
+
+  for (let y = 0; y < H; y += 32) {
+    c.fillStyle = '#23272d';
+    c.fillRect(0, y, W, 18);
+    c.fillStyle = 'rgba(255,255,255,0.05)';
+    c.fillRect(0, y, W, 2);
+    c.fillStyle = 'rgba(0,0,0,0.4)';
+    c.fillRect(0, y + 17, W, 3);
+    r.fillStyle = 'rgb(255,140,10)';
+    r.fillRect(0, y, W, 18);
+  }
+
+  c.save();
+  c.globalCompositeOperation = 'overlay';
+  c.globalAlpha = 0.2;
+  c.drawImage(getNoiseTile(), 0, 0);
+  c.restore();
+
+  return { colour: col.canvas, orm: orm.canvas };
+}
+
 export const CAN_SHEET = { width: BODY_W, height: BODY_H, printTop: PRINT_TOP, printBottom: PRINT_BOTTOM };

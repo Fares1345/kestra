@@ -59,6 +59,28 @@ export const STRINGS = {
     'unit.kcal': 'kcal',
     'unit.outOf5': '/5',
 
+    'journey.eyebrow': 'How it is made',
+    'scene.mix.no': '01',
+    'scene.mix.title': 'It starts cold.',
+    'scene.mix.body':
+      'Green coffee extract, L-theanine and the fruit base go into a jacketed tank held at four degrees. Cold means nothing has to be cooked, and nothing cooked ever tastes like the fruit it came from.',
+    'scene.mix.meta': 'Riyadh · Tank 3 · 4 °C',
+    'scene.fill.no': '02',
+    'scene.fill.title': 'Filled, then sealed in one pass.',
+    'scene.fill.body':
+      'Cans are counter-pressure filled so the carbonation stays where it belongs, then double-seamed within seconds. The shorter the can spends open, the less of the aroma you lose.',
+    'scene.fill.meta': 'Line 2 · 3.4 volumes CO₂',
+    'scene.pack.no': '03',
+    'scene.pack.title': 'Twelve to a tray.',
+    'scene.pack.body':
+      'Sealed cans run the line, get date-coded on the base, and go into a printed tray. From here it is a two-day drive to most of the Kingdom.',
+    'scene.pack.meta': 'Packing · 12 × 355 mL',
+    'scene.reveal.no': '04',
+    'scene.reveal.title': 'Then it is just a cold can.',
+    'scene.reveal.body':
+      'Out of the chiller at three degrees, straight into the case. Everything above this line exists so that the first mouthful tastes the way it did in the tank.',
+    'scene.reveal.meta': 'Ready to drink · Serve at 3 °C',
+
     'ticker.0': 'Zero sugar',
     'ticker.1': '200 mg L-theanine',
     'ticker.2': 'No crash',
@@ -229,6 +251,28 @@ export const STRINGS = {
     'unit.ml': 'مل',
     'unit.kcal': 'سعرة',
     'unit.outOf5': '/٥',
+
+    'journey.eyebrow': 'كيف يُصنع',
+    'scene.mix.no': '٠١',
+    'scene.mix.title': 'يبدأ بارداً.',
+    'scene.mix.body':
+      'مستخلص البن الأخضر وإل-ثيانين وقاعدة الفاكهة تدخل خزاناً مبرّداً عند أربع درجات. البرودة تعني ألا شيء يُطهى، وما يُطهى لا يعود بطعم الفاكهة التي جاء منها.',
+    'scene.mix.meta': 'الرياض · الخزان ٣ · ٤ °م',
+    'scene.fill.no': '٠٢',
+    'scene.fill.title': 'تُعبّأ وتُغلق في مرور واحد.',
+    'scene.fill.body':
+      'تُعبّأ العلب بضغط معاكس ليبقى الغاز في مكانه، ثم تُغلق بحياكة مزدوجة خلال ثوانٍ. كلما قلّ الوقت الذي تبقى فيه العلبة مفتوحة، قلّ ما تفقده من الرائحة.',
+    'scene.fill.meta': 'الخط ٢ · ٣٫٤ حجم CO₂',
+    'scene.pack.no': '٠٣',
+    'scene.pack.title': 'اثنتا عشرة في الصندوق.',
+    'scene.pack.body':
+      'العلب المغلقة تسير على الخط، يُطبع تاريخها على القاعدة، ثم توضع في صندوق مطبوع. من هنا يومان بالشاحنة إلى معظم مناطق المملكة.',
+    'scene.pack.meta': 'التعبئة · ١٢ × ٣٥٥ مل',
+    'scene.reveal.no': '٠٤',
+    'scene.reveal.title': 'ثم تصبح مجرد علبة باردة.',
+    'scene.reveal.body':
+      'تخرج من التبريد عند ثلاث درجات وتذهب مباشرة إلى الصندوق. كل ما سبق موجود لتكون الرشفة الأولى بالطعم نفسه الذي كان في الخزان.',
+    'scene.reveal.meta': 'جاهزة للشرب · تُقدَّم عند ٣ °م',
 
     'ticker.0': 'خالٍ من السكر',
     'ticker.1': '٢٠٠ ملغ إل-ثيانين',

@@ -98,6 +98,67 @@ const CUES = [
 
 const STATIONS = [
   {
+    // Scene 1. Descending into the vessel, then drifting across the surface
+    // as it fills. The camera never stops moving and never orbits a subject.
+    id: 'mix',
+    selector: '#scene-mix',
+    at: 0.5,
+    scene: 'mix',
+    // Starts wide enough to read the tank as a tank, then tips over the rim
+    // toward the surface as it fills. Never inside the vessel looking at fog.
+    from: { pos: [6.6, 8.2, 8.4], target: [-0.4, 3.1, 0] },
+    via: { pos: [6.4, 5.5, 6.6], target: [-0.4, 2.5, -0.2] },
+    pos: [4.4, 5.15, 6.2],
+    target: [-0.4, 1.9, -0.5],
+    fov: 38, offsetX: 1.0, spin: 0, dust: 0, exposure: 0.94, pack: 0, opacity: 1, accent: 0,
+    mDist: 2.4, mLift: -1.05,
+  },
+  {
+    // Scene 2. A slow lateral track along the filling line, the way a plant
+    // is actually filmed: parallel to the machine, not circling it.
+    id: 'fill',
+    selector: '#scene-fill',
+    at: 0.5,
+    scene: 'fill',
+    // A slow lateral track along the line, far enough back that whole cans
+    // stay in frame — a cropped can cannot show off the thing it is here for.
+    from: { pos: [-4.4, 1.85, 4.3], target: [-1.5, 0.72, 0] },
+    pos: [4.4, 1.7, 4.3],
+    target: [1.4, 0.72, 0],
+    fov: 33, offsetX: -1.45, spin: 0, dust: 0, exposure: 1.0, pack: 0, opacity: 1, accent: 0,
+    mDist: 1.5, mLift: -0.6,
+  },
+  {
+    // Scene 3. Low and close to the belt, riding with the cans, then lifting
+    // to find the tray at the end of the line.
+    id: 'packing',
+    selector: '#scene-pack',
+    at: 0.5,
+    scene: 'packing',
+    // Rides low beside the belt, then overtakes the line and comes round to
+    // find the tray filling at the end of it. One continuous dolly, no cuts.
+    from: { pos: [4.9, 1.02, -5.4], target: [0, 0.62, -1.0] },
+    // The arc keeps the lens outside the line instead of ploughing through it.
+    via: { pos: [6.6, 1.5, 3.4], target: [0, 0.6, 4.2] },
+    pos: [4.8, 3.4, 15.2],
+    target: [0, 0.6, 8.9],
+    fov: 31, offsetX: 1.9, spin: 0, dust: 0, exposure: 0.98, pack: 0, opacity: 1, accent: 0,
+    mDist: 1.45, mLift: -0.8,
+  },
+  {
+    // Scene 4. Out of the plant and back into the studio: a slow push-in on
+    // the finished can that hands straight over to the store's own hero.
+    id: 'reveal',
+    selector: '#scene-reveal',
+    at: 0.5,
+    from: { pos: [2.35, 1.7, 5.1], target: [0, 0.84, 0] },
+    via: { pos: [2.0, 0.95, 4.1], target: [0, 0.8, 0] },
+    pos: [1.0, 0.7, 3.35],
+    target: [0, 0.78, 0],
+    fov: 33, offsetX: -0.95, spin: 0.12, dust: 0.5, exposure: 1.06, pack: 0, opacity: 1, accent: 1.3,
+    mDist: 1.34, mLift: -0.4,
+  },
+  {
     id: 'hero',
     selector: '#hero',
     at: 0.25, // fraction into the section where this station is fully reached
@@ -225,6 +286,7 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
   function finish() {
     if (phase === 'live') return;
     phase = 'live';
+    stage.setScene(null, 0);
     stage.setFocus(4.4, 0);
     stage.setLightSweep(1);
     hero.spin = stage.canPivot.rotation.y;
@@ -276,13 +338,61 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
   const frameTarget = new THREE.Vector3();
   const scratch = {};
 
+  let sceneId = null;
+  let sceneProgress = 0;
+
+  /**
+   * A station with a `from` pose is a travelling shot: the camera runs from
+   * `from` to its resting pose across the station's own span, so the move
+   * belongs to the scene rather than to the gap between scenes.
+   */
+  function applyTravel(station, local) {
+    if (!station.from) return false;
+    const e = ease.smooth(clamp01(local));
+    const v = station.via;
+    if (v) {
+      // A straight line between two poses reads as a slide. One control point
+      // turns it into an arc, which is what a dolly on a real set describes.
+      const a = (1 - e) * (1 - e);
+      const b = 2 * (1 - e) * e;
+      const c = e * e;
+      const bez = (f, t, i) => f[i] * a + v[t][i] * b + station[t][i] * c;
+      framePos.set(
+        bez(station.from.pos, 'pos', 0),
+        bez(station.from.pos, 'pos', 1),
+        bez(station.from.pos, 'pos', 2)
+      );
+      frameTarget.set(
+        bez(station.from.target, 'target', 0),
+        bez(station.from.target, 'target', 1),
+        bez(station.from.target, 'target', 2)
+      );
+      return true;
+    }
+    framePos.set(
+      station.from.pos[0] + (station.pos[0] - station.from.pos[0]) * e,
+      station.from.pos[1] + (station.pos[1] - station.from.pos[1]) * e,
+      station.from.pos[2] + (station.pos[2] - station.from.pos[2]) * e
+    );
+    frameTarget.set(
+      station.from.target[0] + (station.target[0] - station.from.target[0]) * e,
+      station.from.target[1] + (station.target[1] - station.from.target[1]) * e,
+      station.from.target[2] + (station.target[2] - station.from.target[2]) * e
+    );
+    return true;
+  }
+
   /** Interpolate the two stations the page currently sits between. */
   function sampleStations(y) {
     if (!anchors.length) return null;
     if (y <= anchors[0].y) {
       Object.assign(scratch, anchors[0]);
-      framePos.set(...anchors[0].pos);
-      frameTarget.set(...anchors[0].target);
+      sceneId = anchors[0].scene ?? null;
+      sceneProgress = 0;
+      if (!applyTravel(anchors[0], 0)) {
+        framePos.set(...anchors[0].pos);
+        frameTarget.set(...anchors[0].target);
+      }
       return anchors[0].id;
     }
     for (let i = 0; i < anchors.length - 1; i++) {
@@ -290,7 +400,21 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
       const b = anchors[i + 1];
       if (y > b.y) continue;
       const span = Math.max(1, b.y - a.y);
-      const t = ease.smooth(clamp01((y - a.y) / span));
+      const raw = clamp01((y - a.y) / span);
+      const t = ease.smooth(raw);
+      for (const k of LERPED) scratch[k] = a[k] + (b[k] - a[k]) * t;
+
+      // While the page is inside a travelling station, that station drives the
+      // camera and its scene; the next station only takes over on the handoff.
+      if ((a.scene || a.from) && raw < 0.82) {
+        sceneId = a.scene;
+        sceneProgress = clamp01(raw / 0.82);
+        applyTravel(a, sceneProgress);
+        return a.id;
+      }
+      sceneId = raw > 0.82 && b.scene ? b.scene : null;
+      sceneProgress = 0;
+
       framePos.set(
         a.pos[0] + (b.pos[0] - a.pos[0]) * t,
         a.pos[1] + (b.pos[1] - a.pos[1]) * t,
@@ -301,11 +425,11 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
         a.target[1] + (b.target[1] - a.target[1]) * t,
         a.target[2] + (b.target[2] - a.target[2]) * t
       );
-      for (const k of LERPED) scratch[k] = a[k] + (b[k] - a[k]) * t;
       return t < 0.5 ? a.id : b.id;
     }
     const last = anchors[anchors.length - 1];
     Object.assign(scratch, last);
+    sceneId = null;
     framePos.set(...last.pos);
     frameTarget.set(...last.target);
     return last.id;
@@ -349,9 +473,13 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
     // frame without the viewing angle — and therefore the label — swinging.
     const pan = scratch.offsetX * l.pan;
     tmp.copy(framePos);
+    // Pull back along the view axis, not along world Z. Scaling Z only works
+    // when the subject sits near the origin; the filling line and the conveyor
+    // run down Z, so scaling it there slid the camera past the action instead
+    // of away from it.
+    if (l.distance !== 1) tmp.sub(frameTarget).multiplyScalar(l.distance).add(frameTarget);
     tmp.x += hero.smoothed.x * 0.26 - pan;
     tmp.y += hero.smoothed.y * 0.15 + l.lift;
-    tmp.z *= l.distance;
 
     tmpTarget.copy(frameTarget);
     tmpTarget.x -= pan;
@@ -375,6 +503,7 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
     stage.setExposure(scratch.exposure);
     stage.setAccentPower(scratch.accent);
     stage.setPackBlend(scratch.pack);
+    stage.setScene(sceneId, sceneProgress);
 
     onVisual?.(scratch.opacity, activeId);
     // Below ~2% opacity there is nothing to see, so stop drawing entirely.

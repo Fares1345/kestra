@@ -92,6 +92,7 @@ async function readyFonts() {
  * ------------------------------------------------------------------ */
 
 function setupScrollEffects(onScroll) {
+  const scenePanels = $$('.scene');
   const header = $('[data-header]');
   const progress = $('[data-progress]');
   let lastY = 0;
@@ -107,6 +108,12 @@ function setupScrollEffects(onScroll) {
     if (y < lastY - 4) header?.classList.remove('is-tucked');
 
     observeReveals();
+
+    // The scene copy belongs to whichever panel currently owns the viewport.
+    for (const panel of scenePanels) {
+      const r = panel.getBoundingClientRect();
+      panel.classList.toggle('is-near', r.top < innerHeight * 0.65 && r.bottom > innerHeight * 0.3);
+    }
 
     if (progress) {
       const max = root.scrollHeight - innerHeight;
@@ -212,6 +219,10 @@ async function boot() {
   stage.setPackContents(store.packContents);
   director.prime();
   setProgress(1);
+
+  // The first scene is built while the loader is still up; the rest arrive
+  // lazily as the page approaches them.
+  stage.prewarmScene('mix');
 
   stage.update = (dt) => director.update(dt);
   stage.start();

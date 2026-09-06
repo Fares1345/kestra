@@ -19,10 +19,11 @@ with wide tracking — the mark carries the distinctiveness, the wordmark stays
 quiet.
 
 A storefront for a fictional Saudi energy drink brand. It opens on a cinematic
-sequence built around a real-time 3D can, hands that same camera to the shop,
-and keeps going: the can travels the page section by section and becomes a
-twelve-pack when you reach the pack builder. There is no cut between any of it,
-because there is only one scene.
+sequence built around a real-time 3D can, walks you through how the drink is
+made in four scroll-driven scenes, hands that same camera to the shop, and keeps
+going: the can travels the page section by section and becomes a twelve-pack
+when you reach the pack builder. There is no cut between any of it, because
+there is only one scene.
 
 Bilingual English/Arabic with real RTL, priced in Saudi riyal, delivered across
 the Kingdom.
@@ -96,6 +97,33 @@ The sequence is timed against the wall clock rather than accumulated frame
 deltas, so a slow machine gets a choppier six seconds, never a slower six
 seconds. It can be skipped with the button, Escape, space, enter, a scroll or a
 touch drag, and `prefers-reduced-motion` jumps straight to the final frame.
+
+## The production journey
+
+`js/scenes.js` builds four beats that play out as you scroll, each in its own
+place with its own camera move rather than one can turning on the spot:
+
+1. **Ingredient preparation** — inside a jacketed mixing vessel. The camera
+   starts wide enough to read the tank as a tank, then tips over the rim as the
+   inlet pours and the level climbs. The shell is deliberately not
+   metalness-1: a fully metallic surface has no diffuse term, so in a dim plant
+   it renders as a black hole no matter how it is lit.
+2. **Filling and sealing** — a slow lateral track along the filling line. Each
+   can fills slightly after the one before it, and the lids come down and seat
+   in the same stagger, so the line reads as a line rather than four things
+   doing the same thing at once.
+3. **Packaging** — a long dolly that rides low beside the conveyor, overtakes
+   the line and comes round to find the tray filling at the end of it. The path
+   is a Bézier through a control point rather than a straight lerp; a straight
+   line between two poses reads as a slide, an arc reads as a dolly.
+4. **Product reveal** — out of the plant and back into the studio for a push-in
+   on the finished can, which hands straight over to the store's own hero
+   framing. That handoff is the same camera continuing, not a cut.
+
+The plant has its own prefiltered environment (`buildPlant()`) with ceiling rows
+*and* tall vertical strips, because a cylinder lit only from above has no
+vertical highlight, and a vertical highlight running down the shell is the
+single thing that reads as stainless.
 
 ## Product photography
 

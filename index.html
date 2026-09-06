@@ -92,6 +92,7 @@
     </a>
 
     <nav class="nav" data-nav aria-label="Primary">
+      <a href="#journey" data-i18n="journey.eyebrow">How it is made</a>
       <a href="#shop" data-i18n="nav.shop">Shop</a>
       <a href="#mix" data-i18n="nav.pack">Build a pack</a>
       <a href="#formula" data-i18n="nav.formula">Formula</a>
@@ -120,6 +121,58 @@
 <p class="sr-only" role="status" aria-live="polite" data-cart-live>Cart is empty</p>
 
 <main id="top">
+
+<!-- ────────────────  the production journey  ──────────────── -->
+<!-- Each panel is one scroll-driven scene. The 3D is rendered on the fixed
+     canvas behind; these carry only the copy and reserve the height. -->
+<section class="journey" id="journey" aria-label="How it is made">
+  <article class="scene" id="scene-mix">
+    <div class="shell scene__inner">
+      <div class="scene__copy">
+        <p class="scene__no" data-i18n="scene.mix.no">01</p>
+        <p class="eyebrow" data-i18n="journey.eyebrow">How it is made</p>
+        <h2 class="display scene__title" data-i18n="scene.mix.title"></h2>
+        <p class="scene__body" data-i18n="scene.mix.body"></p>
+        <p class="scene__meta" data-i18n="scene.mix.meta"></p>
+      </div>
+    </div>
+  </article>
+
+  <article class="scene scene--end" id="scene-fill">
+    <div class="shell scene__inner">
+      <div class="scene__copy">
+        <p class="scene__no" data-i18n="scene.fill.no">02</p>
+        <h2 class="display scene__title" data-i18n="scene.fill.title"></h2>
+        <p class="scene__body" data-i18n="scene.fill.body"></p>
+        <p class="scene__meta" data-i18n="scene.fill.meta"></p>
+      </div>
+    </div>
+  </article>
+
+  <article class="scene" id="scene-pack">
+    <div class="shell scene__inner">
+      <div class="scene__copy">
+        <p class="scene__no" data-i18n="scene.pack.no">03</p>
+        <h2 class="display scene__title" data-i18n="scene.pack.title"></h2>
+        <p class="scene__body" data-i18n="scene.pack.body"></p>
+        <p class="scene__meta" data-i18n="scene.pack.meta"></p>
+      </div>
+    </div>
+  </article>
+
+  <!-- Scene four leaves the plant: the finished can, back in the studio, on
+       the push-in that hands straight over to the store's own hero. -->
+  <article class="scene scene--end" id="scene-reveal">
+    <div class="shell scene__inner">
+      <div class="scene__copy">
+        <p class="scene__no" data-i18n="scene.reveal.no">04</p>
+        <h2 class="display scene__title" data-i18n="scene.reveal.title"></h2>
+        <p class="scene__body" data-i18n="scene.reveal.body"></p>
+        <p class="scene__meta" data-i18n="scene.reveal.meta"></p>
+      </div>
+    </div>
+  </article>
+</section>
 
 <!-- ──────────────────────────  hero  ────────────────────────── -->
 <section class="hero" id="hero">

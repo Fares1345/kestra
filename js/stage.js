@@ -21,6 +21,12 @@ import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { createCan, buildCanGeometries, CAN_DIMENSIONS } from './can.js';
 import { createPack } from './pack.js';
 import {
+  makeFactoryMaterials,
+  createMixingScene,
+  createFillingScene,
+  createPackingScene,
+} from './scenes.js';
+import {
   paintColourSheet,
   paintSurfaceSheets,
   paintLidSheets,
@@ -30,6 +36,9 @@ import {
   makeFloorFade,
   makeBackdrop,
   makeReflectionFade,
+  makeSteelSheets,
+  makeLiquidNormal,
+  makeBeltSheets,
 } from './artwork.js';
 
 /* ------------------------------------------------------------------ *
@@ -118,6 +127,60 @@ function buildStudio() {
   flag.rotation.x = Math.PI / 2;
   room.add(flag);
 
+  return room;
+}
+
+/** A plant, not a studio: hard overhead runs and a lot of dark between them. */
+function buildPlant() {
+  const room = new THREE.Scene();
+  room.add(
+    new THREE.Mesh(
+      new THREE.BoxGeometry(30, 18, 30),
+      new THREE.MeshBasicMaterial({ color: 0x070809, side: THREE.BackSide })
+    )
+  );
+  // Rows of ceiling strips, the signature reflection in factory stainless.
+  for (let i = -2; i <= 2; i++) {
+    const strip = glowPanel(1.1, 20, 0xeaf2ff, 3.1);
+    strip.position.set(i * 4.2, 8.4, 0);
+    strip.rotation.x = Math.PI / 2;
+    room.add(strip);
+  }
+  // Walls on all four sides. Brushed stainless is almost pure specular, so a
+  // shell with nothing around it renders black — a plant has walls, and they
+  // are what makes the metal read as metal at grazing angles.
+  const walls = [
+    [0, 3, -11, 0],
+    [0, 3, 11, Math.PI],
+    [-11, 3, 0, Math.PI / 2],
+    [11, 3, 0, -Math.PI / 2],
+  ];
+  for (const [x, y, z, ry] of walls) {
+    const wall = glowPanel(22, 8, 0x39434f, 0.95);
+    wall.position.set(x, y, z);
+    wall.rotation.y = ry;
+    room.add(wall);
+  }
+  // Tall vertical strips as well as the ceiling rows. A cylinder lit only from
+  // above has no vertical highlight, and a vertical highlight running down the
+  // shell is the single thing that reads as stainless.
+  const uprights = [
+    [-8.5, 2.6, -10.6, 0],
+    [8.5, 2.6, -10.6, 0],
+    [-10.6, 2.6, 5, Math.PI / 2],
+    [10.6, 2.6, 5, -Math.PI / 2],
+  ];
+  for (const [x, y, z, ry] of uprights) {
+    const strip = glowPanel(1.5, 11, 0xe6eefc, 3.4);
+    strip.position.set(x, y, z);
+    strip.rotation.y = ry;
+    room.add(strip);
+  }
+
+  const floorBounce = glowPanel(24, 24, 0x1b222c, 0.8);
+  floorBounce.position.set(0, -3, 0);
+  floorBounce.rotation.x = -Math.PI / 2;
+  room.add(floorBounce);
   return room;
 }
 
@@ -273,12 +336,20 @@ export function createStage(canvas, { quality, product, products }) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
   const studio = buildStudio();
-  const envTarget = pmrem.fromScene(studio, 0.035);
-  scene.environment = envTarget.texture;
+  const envStudio = pmrem.fromScene(studio, 0.035);
   studio.traverse((o) => {
     o.geometry?.dispose();
     o.material?.dispose();
   });
+
+  const plant = buildPlant();
+  const envPlant = pmrem.fromScene(plant, 0.05);
+  plant.traverse((o) => {
+    o.geometry?.dispose();
+    o.material?.dispose();
+  });
+
+  scene.environment = envStudio.texture;
 
   /* ---------- textures ---------- */
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
@@ -477,14 +548,23 @@ export function createStage(canvas, { quality, product, products }) {
     return mats;
   }
 
+  function ensurePackGeometries() {
+    if (!packGeometries) packGeometries = buildCanGeometries({ segments: quality.packSegments, tab: false });
+    return packGeometries;
+  }
+
+  let cartonMap = null;
+  function ensureCartonMap() {
+    if (!cartonMap) cartonMap = wrapTexture(paintCartonSheets(product.accent).colour, { srgb: true, repeat: false });
+    return cartonMap;
+  }
+
   function ensurePack() {
     if (pack) return pack;
-    packGeometries = buildCanGeometries({ segments: quality.packSegments, tab: false });
-    const carton = paintCartonSheets(product.accent);
     pack = createPack({
-      geometries: packGeometries,
+      geometries: ensurePackGeometries(),
       materialFor: packMaterialFor,
-      cartonMap: wrapTexture(carton.colour, { srgb: true, repeat: false }),
+      cartonMap: ensureCartonMap(),
     });
     pack.group.visible = false;
     pack.group.scale.setScalar(0.001);
@@ -492,8 +572,58 @@ export function createStage(canvas, { quality, product, products }) {
     return pack;
   }
 
+  /* ---------- the production journey ---------- */
+  // Each scene is built the first time the page comes near it. Nothing is
+  // allocated for a scene the visitor never scrolls to.
+  const journey = new Map();
+  let factoryMats = null;
+  let activeScene = null;
+
+  function ensureFactoryMaterials() {
+    if (factoryMats) return factoryMats;
+    const steel = makeSteelSheets();
+    const belt = makeBeltSheets();
+    factoryMats = makeFactoryMaterials({
+      steel: { colour: wrapTexture(steel.colour, { srgb: true }), orm: wrapTexture(steel.orm) },
+      belt: { colour: wrapTexture(belt.colour, { srgb: true }), orm: wrapTexture(belt.orm) },
+      liquidNormal: wrapTexture(makeLiquidNormal(quality.tier === 'low' ? 256 : 512)),
+    });
+    return factoryMats;
+  }
+
+  function ensureScene(id) {
+    if (journey.has(id)) return journey.get(id);
+    const materials = ensureFactoryMaterials();
+    const current = products.find((p) => p.id === lastFlavourId) || product;
+    let built = null;
+    if (id === 'mix') {
+      built = createMixingScene({ materials, accent: current.accent });
+    } else if (id === 'fill') {
+      built = createFillingScene({
+        materials,
+        geometries: ensurePackGeometries(),
+        canMaterials: packMaterialFor(current.id),
+        accent: current.accent,
+      });
+    } else if (id === 'packing') {
+      built = createPackingScene({
+        materials,
+        geometries: ensurePackGeometries(),
+        materialFor: packMaterialFor,
+        cartonMap: ensureCartonMap(),
+        products,
+      });
+    }
+    if (!built) return null;
+    built.group.visible = false;
+    scene.add(built.group);
+    journey.set(id, built);
+    return built;
+  }
+
   /* ---------- hero / pack blend ---------- */
   let packBlend = 0;
+  let lastFlavourId = product.id;
   function applyBlend() {
     const b = packBlend;
     const canScale = Math.max(0.0001, 1 - b * 1.35);
@@ -519,6 +649,7 @@ export function createStage(canvas, { quality, product, products }) {
 
   // Adaptive quality: if the device cannot hold a frame budget, shed load
   // rather than letting the whole page stutter.
+  let sceneProgress = 0;
   let slowFrames = 0;
   let degraded = false;
 
@@ -567,6 +698,7 @@ export function createStage(canvas, { quality, product, products }) {
     dust.material.uniforms.uTime.value = clock;
     sparks.material.uniforms.uTime.value = clock;
     pack?.update(dt);
+    if (activeScene) journey.get(activeScene)?.update(dt, sceneProgress);
     onUpdate?.(dt, clock);
     if (visible) drawFrame();
   }
@@ -636,6 +768,8 @@ export function createStage(canvas, { quality, product, products }) {
 
     /** Swap the printed sleeve and retint everything keyed to the flavour. */
     setFlavour(next) {
+      lastFlavourId = next.id;
+      journey.forEach((sc) => sc.setAccent(next.accent));
       const body = can.userData.materials.body;
       body.map = colourFor(next);
       body.needsUpdate = true;
@@ -650,6 +784,32 @@ export function createStage(canvas, { quality, product, products }) {
       dust.material.uniforms.uTint.value.set(next.accent).lerp(new THREE.Color('#ffffff'), 0.82);
       pack?.tintTray(next.accent);
     },
+
+    /* ---- journey ---- */
+    /**
+     * Show exactly one journey scene, or none. The studio environment is for
+     * the reveal; the factory scenes get the plant.
+     */
+    setScene(id, progress) {
+      if (id && id !== activeScene) {
+        const next = ensureScene(id);
+        journey.forEach((sc, key) => (sc.group.visible = key === id));
+        activeScene = next ? id : null;
+      } else if (!id && activeScene) {
+        journey.forEach((sc) => (sc.group.visible = false));
+        activeScene = null;
+      }
+      const inPlant = !!activeScene;
+      const wantEnv = inPlant ? envPlant.texture : envStudio.texture;
+      if (scene.environment !== wantEnv) scene.environment = wantEnv;
+      // The hero can, its floor and its backdrop belong to the reveal only.
+      heroRig.visible = !inPlant && heroRig.scale.x > 0.02;
+      floor.visible = !inPlant && packBlend < 0.9;
+      backdrop.visible = !inPlant;
+      if (pack) pack.group.visible = !inPlant && packBlend > 0.25;
+      sceneProgress = progress;
+    },
+    prewarmScene: (id) => ensureScene(id),
 
     /* ---- pack ---- */
     ensurePack,
@@ -747,7 +907,8 @@ export function createStage(canvas, { quality, product, products }) {
     dispose() {
       stage.stop();
       composer?.dispose();
-      envTarget.dispose();
+      envStudio.dispose();
+      envPlant.dispose();
       pmrem.dispose();
       pack?.dispose();
       scene.traverse((o) => {
@@ -755,6 +916,11 @@ export function createStage(canvas, { quality, product, products }) {
         if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
         else o.material?.dispose();
       });
+      journey.forEach((sc) => sc.group.traverse((o) => {
+        o.geometry?.dispose();
+        if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
+        else o.material?.dispose();
+      }));
       sheetCache.forEach((t) => t.dispose());
       Object.values(shared).forEach((t) => t.dispose());
       renderer.dispose();

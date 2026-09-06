@@ -753,6 +753,83 @@ body.no-webgl .hero::after {
 }
 @media (max-width: 900px) { body.no-webgl .hero::after { display: none; } }
 
+/* ----------------------------- journey ------------------------------- */
+
+/* Each scene is a tall panel with the 3D running behind it. The copy sits in
+   one corner and stays out of the frame's way. */
+/* The copy scrims deliberately bleed past the viewport edges, so the section
+   clips them. `clip` rather than `hidden`: hidden on one axis forces the other
+   to auto and turns a 6000px-tall section into a scroll container. */
+.journey { position: relative; z-index: 2; overflow: clip; }
+
+.scene {
+  position: relative;
+  min-height: 145svh;
+  display: flex;
+  align-items: center;
+  /* No background: the factory is rendered on the canvas behind the page. */
+}
+.scene__inner { width: 100%; }
+.scene__copy {
+  position: relative;
+  max-width: 40ch;
+  padding: 26px 0;
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 900ms var(--ease), transform 900ms var(--ease);
+}
+/* The copy sits over a lit render, so it carries its own soft pool of shade.
+   Without it the white type lands on a white can and disappears. */
+.scene__copy::before {
+  content: '';
+  position: absolute;
+  inset: -14vh -34vw;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    62% 52% at 50% 50%,
+    rgba(4, 5, 7, 0.9) 0%,
+    rgba(4, 5, 7, 0.72) 42%,
+    rgba(4, 5, 7, 0) 78%
+  );
+}
+.scene__copy > * { position: relative; }
+.scene.is-near .scene__copy { opacity: 1; transform: none; }
+/* Alternate which side the copy sits on, so three scenes do not stack up as
+   three identical compositions. */
+.scene--end .scene__inner { display: flex; justify-content: flex-end; }
+
+.scene__no {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 86%;
+  font-size: 13px;
+  letter-spacing: 0.24em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+[dir='rtl'] .scene__no { font-family: var(--font-ar); font-stretch: normal; letter-spacing: 0.1em; }
+.scene__title { font-size: clamp(30px, 4.4vw, 56px); margin-bottom: 20px; }
+.scene__body {
+  margin: 0 0 22px;
+  font-size: clamp(15px, 1.5vw, 17px);
+  color: var(--text-2);
+  text-wrap: pretty;
+  /* The copy sits over a lit render, so it needs a little separation. */
+  text-shadow: 0 1px 24px rgba(3, 4, 6, 0.85);
+}
+.scene__meta {
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-2);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+[dir='rtl'] .scene__meta { letter-spacing: 0; }
+
 /* ------------------------------ ticker ------------------------------- */
 
 .ticker {
@@ -1886,6 +1963,22 @@ body.no-webgl .hero::after {
 }
 
 @media (max-width: 900px) {
+  /* On a phone the copy goes under the frame rather than beside it, so the
+     scene has the top of the viewport to itself. */
+  .scene { min-height: 165svh; align-items: flex-end; }
+  .scene__copy { max-width: none; padding-bottom: 12vh; }
+  /* Stacked layout: the copy is under the frame, so the shade comes up from
+     the bottom edge rather than pooling around a column. */
+  .scene__copy::before {
+    inset: -5vh -50vw -30vh;
+    background: linear-gradient(
+      to top,
+      rgba(4, 5, 7, 0.9) 34%,
+      rgba(4, 5, 7, 0.6) 62%,
+      rgba(4, 5, 7, 0) 100%
+    );
+  }
+  .scene--end .scene__inner { justify-content: flex-start; }
   .nav {
     position: fixed;
     inset: 68px 0 auto;
