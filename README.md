@@ -3,6 +3,21 @@
 Named for the kestrel, which hangs dead still in a forty-mile wind by correcting
 continuously — which is the product promise, not decoration.
 
+## The mark
+
+The identity is a wing-K: a solid stem with the upper arm swept long and shallow
+like an outstretched primary feather, and the lower arm landing hard on the
+baseline. It is drawn on a 32-unit grid, entirely from straight edges, so it
+stays sharp from a 200 px lockup down to a 16 px favicon and survives being
+stamped into an aluminium lid.
+
+It lives in exactly two places: as SVG paths in `index.html` for the navigation,
+footer, intro card and favicon, and as `drawMark()` in `js/artwork.js`, which
+reproduces the same geometry on canvas for the printed can, the lid emboss and
+the twelve-pack carton. The wordmark is Archivo at 700, slightly condensed, set
+with wide tracking — the mark carries the distinctiveness, the wordmark stays
+quiet.
+
 A storefront for a fictional Saudi energy drink brand. It opens on a cinematic
 sequence built around a real-time 3D can, hands that same camera to the shop,
 and keeps going: the can travels the page section by section and becomes a
@@ -40,7 +55,16 @@ generated at load time:
 - **Lighting** (`js/stage.js`) — a small studio built from emissive planes and
   prefiltered into an environment map. Cylindrical metal reads as metal because
   of the long vertical highlights thrown by strip softboxes, so the room has
-  strip lights rather than point lamps.
+  strip lights rather than point lamps. Behind the subject is a graduated
+  backdrop, because a product photographed in a room does not float in a void,
+  and beneath it a mirrored body mesh fading out within a fraction of the can's
+  height.
+- **Realism details** — the body material is anisotropic with the grain running
+  around the circumference, which is the direction rolled aluminium is actually
+  brushed. The surface carries fine scratches, fingerprint smudges and settled
+  dust in its roughness map; the condensation nucleates in clusters of fine mist
+  around larger beads rather than scattering evenly, which is how it forms on a
+  cold can.
 - **The twelve-pack** (`js/pack.js`) — a printed tray with a 4 × 3 grid of
   slots. Adding a flavour drops a real can into the next free slot with gravity
   and a small bounce; removing one lifts it out. It shares the hero can's
@@ -60,6 +84,13 @@ two the page currently sits across — so the can is continuously choreographed
 rather than snapping between states. Stations also carry their own narrow-screen
 distance and lift, because a tray 2.5 units wide needs far more room than a
 single can.
+
+The opening is shot with real depth of field: a `BokehPass` racks focus from the
+condensation to the whole can as the camera pulls back, then switches itself off
+so the storefront never pays for the depth pass. The accent light travels around
+the rear of the can throughout, so the highlight sweeps the silhouette instead
+of sitting still — that movement is the clearest signal a shot was lit and filmed
+rather than posed once and rendered.
 
 The sequence is timed against the wall clock rather than accumulated frame
 deltas, so a slow machine gets a choppier six seconds, never a slower six

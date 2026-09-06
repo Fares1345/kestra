@@ -35,6 +35,7 @@ const SHOTS = [
     pos: [0.36, 0.58, 0.44],
     target: [0, 0.62, 0],
     fov: 56, spin: 0, exposure: 0.18, dust: 0, burst: 0, bloom: 0.2, accent: 0.25,
+    focus: 0.42, aperture: 0.0026, sweep: 0,
     curve: 'smooth',
   },
   {
@@ -43,6 +44,7 @@ const SHOTS = [
     pos: [0.52, 0.74, 0.62],
     target: [0, 0.7, 0],
     fov: 52, spin: 0.85, exposure: 1.02, dust: 0.3, burst: 0, bloom: 0.34, accent: 0.7,
+    focus: 0.56, aperture: 0.0016, sweep: 0.26,
     curve: 'inOutCubic',
   },
   {
@@ -51,6 +53,7 @@ const SHOTS = [
     pos: [1.35, 1.28, 1.95],
     target: [0, 0.5, 0],
     fov: 44, spin: 3.4, exposure: 1.1, dust: 0.62, burst: 0.15, bloom: 0.4, accent: 1.25,
+    focus: 1.95, aperture: 0.0008, sweep: 0.52,
     curve: 'inOutCubic',
   },
   {
@@ -59,6 +62,7 @@ const SHOTS = [
     pos: [2.05, 1.0, 3.15],
     target: [0, 0.56, 0],
     fov: 38, spin: 7.3, exposure: 1.14, dust: 0.78, burst: 1, bloom: 0.62, accent: 1.5,
+    focus: 3.15, aperture: 0.00035, sweep: 0.74,
     curve: 'outExpo',
   },
   {
@@ -69,6 +73,7 @@ const SHOTS = [
     pos: [0.9, 0.95, 4.4],
     target: [0, 0.74, 0],
     fov: 30, spin: Math.PI * 4 - Math.PI / 2, exposure: 1.04, dust: 0.42, burst: 0, bloom: 0.34, accent: 1,
+    focus: 4.4, aperture: 0.00004, sweep: 1,
     curve: 'outBack',
   },
 ];
@@ -80,7 +85,7 @@ const CUES = [
   { t: 1.9, name: 'name' },
   { t: 3.4, name: 'claim' },
   { t: 4.35, name: 'flash' },
-  { t: 5.4, name: 'handoff' },
+  { t: 5.65, name: 'handoff' },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -189,6 +194,7 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
       position: scratchPos, target: scratchTarget,
       fov: mix('fov'), spin: mix('spin'), exposure: mix('exposure'),
       dust: mix('dust'), burst: mix('burst'), bloom: mix('bloom'), accent: mix('accent'),
+      focus: mix('focus'), aperture: mix('aperture'), sweep: mix('sweep'),
     };
   }
 
@@ -205,6 +211,8 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
     stage.setBurst(f.burst);
     stage.setBloom(f.bloom);
     stage.setAccentPower(f.accent);
+    stage.setFocus(f.focus, f.aperture);
+    stage.setLightSweep(f.sweep);
   }
 
   function landImmediately() {
@@ -217,6 +225,8 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
   function finish() {
     if (phase === 'live') return;
     phase = 'live';
+    stage.setFocus(4.4, 0);
+    stage.setLightSweep(1);
     hero.spin = stage.canPivot.rotation.y;
     onFinish?.();
     finishResolve?.();

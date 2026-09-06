@@ -16,6 +16,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 
 import { createCan, buildCanGeometries, CAN_DIMENSIONS } from './can.js';
 import { createPack } from './pack.js';
@@ -27,6 +28,8 @@ import {
   makeGlowSprite,
   makeContactShadow,
   makeFloorFade,
+  makeBackdrop,
+  makeReflectionFade,
 } from './artwork.js';
 
 /* ------------------------------------------------------------------ *
@@ -52,6 +55,7 @@ export function detectQuality() {
     packSegments: low ? 40 : 72,
     dust: low ? 240 : 680,
     bloom: !low,
+    dof: !low,
     maxPixelRatio: low ? 1.75 : 2,
     beads: low ? 320 : 620,
   };
@@ -99,6 +103,11 @@ function buildStudio() {
   kicker.rotation.y = Math.PI * 0.06;
   room.add(kicker);
 
+  const top = glowPanel(7, 5, 0xffffff, 0.95);
+  top.position.set(0.4, 6.2, 0.2);
+  top.rotation.x = Math.PI / 2;
+  room.add(top);
+
   const bounce = glowPanel(6, 2.6, 0xffd8b4, 0.85);
   bounce.position.set(1.4, -1.6, 3);
   bounce.rotation.x = -Math.PI * 0.22;
@@ -126,7 +135,7 @@ function makeDust(count, sprite) {
     positions[i * 3] = Math.cos(angle) * radius;
     positions[i * 3 + 1] = -1.2 + Math.random() * 5.4;
     positions[i * 3 + 2] = Math.sin(angle) * radius;
-    scales[i] = 0.007 + Math.pow(Math.random(), 3.4) * 0.026;
+    scales[i] = 0.005 + Math.pow(Math.random(), 3.8) * 0.019;
   }
 
   const geo = new THREE.BufferGeometry();
@@ -355,13 +364,44 @@ export function createStage(canvas, { quality, product, products }) {
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
+  /* ---------- the room behind the subject ---------- */
+  // Unlit, so it reads as a lit backdrop rather than another object in the
+  // scene. This is what stops the can looking like it floats in a void.
+  const backdropTex = new THREE.CanvasTexture(makeBackdrop(product.accent));
+  backdropTex.colorSpace = THREE.SRGBColorSpace;
+  const backdrop = new THREE.Mesh(
+    new THREE.PlaneGeometry(46, 28),
+    new THREE.MeshBasicMaterial({ map: backdropTex, depthWrite: false, toneMapped: true })
+  );
+  backdrop.position.set(0, 3.6, -11);
+  backdrop.renderOrder = -3;
+  scene.add(backdrop);
+
+  /* ---------- the can's reflection in the floor ---------- */
+  // Body only: from any camera angle we use, the lid is never in the mirror.
+  let reflection = null;
+  if (quality.bloom) {
+    const reflectMat = can.userData.materials.body.clone();
+    reflectMat.transparent = true;
+    reflectMat.depthWrite = false;
+    reflectMat.side = THREE.DoubleSide; // mirroring inverts the winding
+    reflectMat.alphaMap = new THREE.CanvasTexture(makeReflectionFade());
+    reflectMat.envMapIntensity = 0.32;
+    reflectMat.anisotropy = 0;
+    reflection = new THREE.Mesh(heroGeometries.body, reflectMat);
+    reflection.scale.y = -1;
+    reflection.position.y = -0.004;
+    reflection.renderOrder = -2;
+    canPivot.add(reflection);
+  }
+
   /* ---------- lights ---------- */
   const key = new THREE.DirectionalLight(0xfff4ea, 2.4);
   key.position.set(-2.4, 4.4, 3.2);
   scene.add(key);
 
-  const rimWarm = new THREE.PointLight(new THREE.Color(product.accent), 16, 5.5, 2);
-  rimWarm.position.set(1.45, 1.6, -1.15);
+  const rimWarm = new THREE.DirectionalLight(new THREE.Color(product.accent), 2.1);
+  rimWarm.position.set(2.6, 2.2, -3.4);
   scene.add(rimWarm);
 
   const rimCool = new THREE.PointLight(0x5b7dff, 5, 4.5, 2);
@@ -382,6 +422,7 @@ export function createStage(canvas, { quality, product, products }) {
   /* ---------- post ---------- */
   let composer = null;
   let bloomPass = null;
+  let bokehPass = null;
   let bloomEnabled = quality.bloom;
 
   function buildComposer() {
@@ -389,6 +430,13 @@ export function createStage(canvas, { quality, product, products }) {
     composer.setPixelRatio(Math.min(devicePixelRatio || 1, quality.maxPixelRatio));
     composer.setSize(innerWidth, innerHeight);
     composer.addPass(new RenderPass(scene, camera));
+    if (quality.dof) {
+      // Shallow focus for the macro opening. Disabled once the intro lands,
+      // because it costs a depth pass every frame.
+      bokehPass = new BokehPass(scene, camera, { focus: 1.0, aperture: 0.0008, maxblur: 0.012 });
+      bokehPass.enabled = false;
+      composer.addPass(bokehPass);
+    }
     bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.34, 0.55, 0.92);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
@@ -496,6 +544,7 @@ export function createStage(canvas, { quality, product, products }) {
     if (degraded) return;
     degraded = true;
     bloomEnabled = false;
+    if (bokehPass) bokehPass.enabled = false;
     renderer.setPixelRatio(Math.min(1.25, renderer.getPixelRatio()));
     dust.material.uniforms.uOpacity.value *= 0.5;
     resize();
@@ -558,9 +607,31 @@ export function createStage(canvas, { quality, product, products }) {
     setBurst: (v) => (sparks.material.uniforms.uBurst.value = v),
     setExposure: (v) => (renderer.toneMappingExposure = v),
     setBloom: (v) => bloomPass && (bloomPass.strength = v),
+    /**
+     * Focus distance in world units and how fast it falls off. Aperture 0 turns
+     * the pass off entirely rather than rendering a no-op depth buffer.
+     */
+    setFocus(distance, aperture) {
+      if (!bokehPass) return;
+      bokehPass.enabled = aperture > 0.00002;
+      if (!bokehPass.enabled) return;
+      bokehPass.uniforms.focus.value = distance;
+      bokehPass.uniforms.aperture.value = aperture;
+    },
     setAccentPower(v) {
-      rimWarm.intensity = 16 * v;
+      rimWarm.intensity = 2.1 * v;
       rimCool.intensity = 5 * v;
+    },
+    /**
+     * Travel the accent light around the can. A highlight that moves across a
+     * cylinder is the single clearest signal that a shot was lit and filmed
+     * rather than posed once and rendered.
+     */
+    setLightSweep(t) {
+      // Stays in the rear hemisphere for the whole travel: cos(a) > 0 keeps z
+      // negative, so the light rims the silhouette instead of washing the face.
+      const a = -0.9 + t * 1.7;
+      rimWarm.position.set(Math.sin(a) * 4.2, 2.2 + Math.cos(t * 2.4) * 0.7, Math.cos(a) * -3.6);
     },
 
     /** Swap the printed sleeve and retint everything keyed to the flavour. */
@@ -568,6 +639,12 @@ export function createStage(canvas, { quality, product, products }) {
       const body = can.userData.materials.body;
       body.map = colourFor(next);
       body.needsUpdate = true;
+      if (reflection) {
+        reflection.material.map = body.map;
+        reflection.material.needsUpdate = true;
+      }
+      backdropTex.image = makeBackdrop(next.accent);
+      backdropTex.needsUpdate = true;
       rimWarm.color.set(next.accent);
       sparks.material.uniforms.uTint.value.set(next.accent).lerp(new THREE.Color('#ffffff'), 0.4);
       dust.material.uniforms.uTint.value.set(next.accent).lerp(new THREE.Color('#ffffff'), 0.82);
@@ -608,6 +685,8 @@ export function createStage(canvas, { quality, product, products }) {
       const dustOpacity = dust.material.uniforms.uOpacity.value;
       const burst = sparks.material.uniforms.uBurst.value;
       const floorVisible = floor.visible;
+      const backdropVisible = backdrop.visible;
+      const reflectionVisible = reflection ? reflection.visible : false;
       const heroScale = heroRig.scale.x;
       const heroY = heroRig.position.y;
 
@@ -615,6 +694,8 @@ export function createStage(canvas, { quality, product, products }) {
         dust.material.uniforms.uOpacity.value = 0;
         sparks.material.uniforms.uBurst.value = 0;
         floor.visible = false;
+        backdrop.visible = false;
+        if (reflection) reflection.visible = false;
         heroRig.visible = true;
         heroRig.scale.setScalar(1);
         heroRig.position.y = 0;
@@ -643,6 +724,8 @@ export function createStage(canvas, { quality, product, products }) {
         dust.material.uniforms.uOpacity.value = dustOpacity;
         sparks.material.uniforms.uBurst.value = burst;
         floor.visible = floorVisible;
+        backdrop.visible = backdropVisible;
+        if (reflection) reflection.visible = reflectionVisible;
         heroRig.scale.setScalar(heroScale);
         heroRig.position.y = heroY;
         can.userData.materials.body.map = prevBody;

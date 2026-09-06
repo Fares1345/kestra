@@ -244,8 +244,13 @@ export function createCan({ segments = 160, maps, geometries = null }) {
     normalScale: new THREE.Vector2(0.55, 0.55),
     metalness: 1,
     roughness: 1,
+    // Varnish over the print.
     clearcoat: 0.6,
     clearcoatRoughness: 0.22,
+    // Rolled aluminium stretches its highlight along the grain. UV u runs
+    // around the can, so rotation 0 lines the stretch up with the brushing.
+    anisotropy: 0.62,
+    anisotropyRotation: 0,
     envMapIntensity: 1.35,
   });
 
@@ -258,7 +263,9 @@ export function createCan({ segments = 160, maps, geometries = null }) {
     roughnessMap: maps.lidRoughness,
     metalness: 1,
     roughness: 1,
-    envMapIntensity: 1.2,
+    // A can lid is stamped, not polished; at hero intensity it mirrors the key
+    // light straight back down the lens and blows out.
+    envMapIntensity: 0.7,
   });
   const lid = new THREE.Mesh(lidGeo, lidMat);
   group.add(lid);

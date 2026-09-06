@@ -155,7 +155,7 @@ function getDropSprite() {
         continue;
       }
       const nz = Math.sqrt(1 - d2);
-      const k = 0.72; // a bead of water is flatter than a full hemisphere
+      const k = 0.46; // water on a vertical wall sags; it is not a marble
       const len = Math.hypot(nx * k, ny * k, nz);
       img.data[i] = Math.round((((nx * k) / len) * 0.5 + 0.5) * 255);
       img.data[i + 1] = Math.round(((-(ny * k) / len) * 0.5 + 0.5) * 255);
@@ -195,6 +195,56 @@ export function makeFloorFade() {
   return canvas;
 }
 
+/** Vertical ramp: the mirrored can is strongest at the floor and gone by mid-height. */
+export function makeReflectionFade() {
+  const { canvas, ctx } = surface(8, 256);
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, '#000000');
+  g.addColorStop(0.84, '#000000');
+  g.addColorStop(0.95, '#0e0e0e');
+  g.addColorStop(1, '#242424');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 8, 256);
+  return canvas;
+}
+
+/**
+ * The graduated backdrop every product photograph is shot against. Without
+ * something behind it the can reads as floating in a void rather than standing
+ * in a room.
+ */
+export function makeBackdrop(accent = '#FF6B2C') {
+  const W = 512;
+  const H = 320;
+  const { canvas, ctx } = surface(W, H);
+  ctx.fillStyle = '#05060a';
+  ctx.fillRect(0, 0, W, H);
+
+  // The pool of light the subject stands in.
+  const pool = ctx.createRadialGradient(W * 0.5, H * 0.58, 0, W * 0.5, H * 0.58, W * 0.3);
+  pool.addColorStop(0, '#171a21');
+  pool.addColorStop(0.4, '#0d1015');
+  pool.addColorStop(1, 'rgba(5,6,10,0)');
+  ctx.fillStyle = pool;
+  ctx.fillRect(0, 0, W, H);
+
+  // A breath of the flavour colour, low and off to one side.
+  const wash = ctx.createRadialGradient(W * 0.72, H * 0.7, 0, W * 0.72, H * 0.7, W * 0.24);
+  wash.addColorStop(0, rgba(accent, 0.11));
+  wash.addColorStop(1, rgba(accent, 0));
+  ctx.fillStyle = wash;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.globalAlpha = 0.1;
+  const tile = getNoiseTile();
+  for (let y = 0; y < H; y += 256) for (let x = 0; x < W; x += 256) ctx.drawImage(tile, x, y);
+  ctx.restore();
+
+  return canvas;
+}
+
 export function makeContactShadow() {
   const { canvas, ctx } = surface(256, 256);
   const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
@@ -225,6 +275,37 @@ function seedFrom(str) {
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * the mark
+ * ------------------------------------------------------------------ */
+
+/**
+ * The Kestra wing-K, in canvas form. Same geometry as the SVG in index.html,
+ * authored on a 32-unit grid: a solid stem with the upper arm swept long and
+ * shallow like an outstretched primary feather.
+ */
+export function drawMark(ctx, cx, cy, size, colour) {
+  const u = size / 32;
+  ctx.save();
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(u, u);
+  ctx.fillStyle = colour;
+  ctx.beginPath();
+  ctx.rect(4, 3, 6.2, 26);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(10.2, 18.3);
+  ctx.lineTo(28.8, 2.4);
+  ctx.lineTo(28.8, 8.5);
+  ctx.lineTo(17.6, 18);
+  ctx.lineTo(29.2, 29);
+  ctx.lineTo(20.9, 29);
+  ctx.lineTo(10.2, 19.1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 /* ------------------------------------------------------------------ *
@@ -442,8 +523,9 @@ function paintFace(ctx, cx, product, faceWidth, bg) {
   ctx.fillText(product.index, cx, top + 430);
   ctx.restore();
 
-  /* house wordmark */
-  const markY = bg.topBand ? bg.topBand - 46 : top + 92;
+  /* the mark, then the wordmark under it */
+  const markY = bg.topBand ? bg.topBand - 46 : top + 96;
+  drawMark(ctx, cx, markY - 58, 40, headColour);
   drawWordmark(ctx, cx, markY, headColour);
   drawRule(ctx, cx, markY + 24, 300, headColour);
 
@@ -588,33 +670,101 @@ export function paintSurfaceSheets({ droplets = true, beadCount = 620 } = {}) {
   n.fillStyle = '#8080ff';
   n.fillRect(0, 0, BODY_W, BODY_H);
 
+  // Handling marks. A can that has come off a shelf is not optically perfect,
+  // and these are the difference between a render and a photograph.
+  r.save();
+  // Fine scratches, mostly circumferential from the filling line.
+  for (let i = 0; i < 260; i++) {
+    const y = rng() * BODY_H;
+    const x = rng() * BODY_W;
+    const len = 12 + rng() * 90;
+    const tilt = (rng() - 0.5) * 0.16;
+    r.globalAlpha = 0.1 + rng() * 0.22;
+    r.strokeStyle = rng() > 0.45 ? 'rgb(255,20,255)' : 'rgb(255,96,220)';
+    r.lineWidth = 0.6 + rng() * 0.9;
+    r.beginPath();
+    r.moveTo(x, y);
+    r.lineTo(x + len, y + len * tilt);
+    r.stroke();
+  }
+  // Fingerprint smudges — soft, slightly rougher, in the places a hand grips.
+  for (let i = 0; i < 14; i++) {
+    const x = rng() * BODY_W;
+    const y = PRINT_TOP + PRINT_H * (0.25 + rng() * 0.55);
+    const rad = 26 + rng() * 46;
+    const g = r.createRadialGradient(x, y, 0, x, y, rad);
+    g.addColorStop(0, 'rgba(255,150,180,0.30)');
+    g.addColorStop(1, 'rgba(255,150,180,0)');
+    r.globalAlpha = 1;
+    r.fillStyle = g;
+    r.beginPath();
+    r.arc(x, y, rad, 0, Math.PI * 2);
+    r.fill();
+  }
+  // A little settled dust.
+  for (let i = 0; i < 340; i++) {
+    r.globalAlpha = 0.12 + rng() * 0.3;
+    r.fillStyle = 'rgb(255,180,200)';
+    r.fillRect(rng() * BODY_W, rng() * BODY_H, 1 + rng() * 1.6, 1 + rng() * 1.6);
+  }
+  r.restore();
+
   if (droplets) {
     const sprite = getDropSprite();
-    for (let i = 0; i < beadCount; i++) {
-      const t = Math.pow(rng(), 0.6); // condensation forms heavier low down
-      const y = PRINT_TOP + 30 + t * (PRINT_H - 60);
-      const x = rng() * BODY_W;
-      const size = 5 + Math.pow(rng(), 2.4) * 30;
+
+    /** One bead: a dome in the normals, a smoother wetter patch in roughness. */
+    const bead = (x, y, size) => {
       n.drawImage(sprite, x - size / 2, y - size / 2, size, size);
       r.save();
-      r.globalAlpha = 0.85;
-      r.fillStyle = 'rgb(255,13,120)';
+      // Bigger beads hold more water and read glossier than the fine mist.
+      r.globalAlpha = 0.45 + Math.min(0.45, size / 40);
+      r.fillStyle = 'rgb(255,10,116)';
       r.beginPath();
       r.arc(x, y, size / 2, 0, Math.PI * 2);
       r.fill();
       r.restore();
+    };
+
+    // Condensation nucleates: a few larger beads with a haze of fine ones
+    // crowding around them, rather than an even scatter of equal circles.
+    const clusters = Math.round(beadCount / 14);
+    for (let c = 0; c < clusters; c++) {
+      const t = Math.pow(rng(), 0.55); // heavier low down, where it runs
+      const cx = rng() * BODY_W;
+      const cy = PRINT_TOP + 24 + t * (PRINT_H - 48);
+      const spread = 40 + rng() * 110;
+
+      bead(cx, cy, 9 + Math.pow(rng(), 1.6) * 21);
+
+      const members = 8 + Math.floor(rng() * 8);
+      for (let i = 0; i < members; i++) {
+        const a = rng() * Math.PI * 2;
+        const d = Math.pow(rng(), 0.7) * spread;
+        const bx = cx + Math.cos(a) * d;
+        const by = cy + Math.sin(a) * d * 0.75;
+        if (by < PRINT_TOP + 10 || by > PRINT_BOTTOM - 10) continue;
+        // Most of what you see is fine mist; the eye reads that as cold.
+        bead(bx, by, 2.2 + Math.pow(rng(), 3) * 11);
+      }
+    }
+
+    // A dusting of isolated micro-beads over everything else.
+    for (let i = 0; i < beadCount; i++) {
+      const t = Math.pow(rng(), 0.6);
+      const y = PRINT_TOP + 20 + t * (PRINT_H - 40);
+      bead(rng() * BODY_W, y, 1.6 + Math.pow(rng(), 3.4) * 7);
     }
     // Beads that have started to run. Stepped at a fraction of their own width
     // and wandering slightly, so a trail reads as one rivulet.
     for (let i = 0; i < 22; i++) {
       let x = rng() * BODY_W;
       const y = PRINT_TOP + 80 + rng() * (PRINT_H - 200);
-      const len = 40 + rng() * 150;
-      const w = 5 + rng() * 7;
+      const len = 34 + rng() * 120;
+      const w = 4 + rng() * 5.5;
       const wander = (rng() - 0.5) * 0.06;
       r.save();
-      r.globalAlpha = 0.5;
-      r.fillStyle = 'rgb(255,19,120)';
+      r.globalAlpha = 0.34;
+      r.fillStyle = 'rgb(255,26,124)';
       r.beginPath();
       for (let k = 0; k < len; k += w * 0.11) {
         const s = w * (1 - Math.pow(k / len, 1.5) * 0.62);
@@ -692,13 +842,15 @@ export function paintLidSheets() {
   c.fill();
   c.restore();
 
+  // Embossed mark and lot code, the way a real lid is stamped.
+  drawMark(c, mid, mid - S * 0.3, 46, 'rgba(96,102,110,0.5)');
   c.save();
-  c.fillStyle = 'rgba(90,96,104,0.55)';
-  setFont(c, { weight: 600, size: 22, family: 'Inter Variable' });
+  c.fillStyle = 'rgba(90,96,104,0.5)';
+  setFont(c, { weight: 600, size: 20, family: 'Inter Variable' });
   c.textAlign = 'center';
   c.translate(mid, mid);
   c.rotate(-Math.PI / 2);
-  tracked(c, BRAND.name, 0, -mid * 0.74, 8);
+  tracked(c, BRAND.name, 0, -mid * 0.76, 8);
   c.restore();
 
   r.fillStyle = '#3a3a3a';
@@ -744,19 +896,21 @@ export function paintCartonSheets(accent = '#FF6B2C') {
   c.fillRect(0, 0, W, 8);
   c.fillRect(0, H - 8, W, 8);
 
+  drawMark(c, W / 2, H * 0.26, 68, accent);
+
   c.fillStyle = PAPER;
   setFont(c, { weight: 600, size: 46, family: 'Inter Variable' });
   c.textAlign = 'center';
-  tracked(c, BRAND.name, W / 2, H * 0.42, 22);
+  tracked(c, BRAND.name, W / 2, H * 0.5, 22);
 
   c.fillStyle = rgba(PAPER, 0.55);
   setFont(c, { weight: 500, size: 22, family: 'Inter Variable' });
-  tracked(c, 'MIXED TWELVE  ·  12 × 355 ML', W / 2, H * 0.56, 6);
+  tracked(c, 'MIXED TWELVE  ·  12 × 355 ML', W / 2, H * 0.62, 6);
 
   setArabicFont(c, { weight: 500, size: 24 });
   c.fillStyle = rgba(PAPER, 0.45);
   c.direction = 'rtl';
-  c.fillText('علبة مخصصة · ١٢ × ٣٥٥ مل', W / 2, H * 0.66);
+  c.fillText('علبة مخصصة · ١٢ × ٣٥٥ مل', W / 2, H * 0.74);
 
   return { colour: col.canvas };
 }
