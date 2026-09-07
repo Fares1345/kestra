@@ -33,7 +33,7 @@ const SHOTS = [
     // read what the object even is.
     t: 0,
     pos: [0.36, 0.58, 0.44],
-    target: [0, 0.62, 0],
+    target: [0, 0.674, 0],
     fov: 56, spin: 0, exposure: 0.18, dust: 0, burst: 0, bloom: 0.2, accent: 0.25,
     focus: 0.42, aperture: 0.0026, sweep: 0,
     curve: 'smooth',
@@ -42,7 +42,7 @@ const SHOTS = [
     // Light comes up across the surface and the beads catch it.
     t: 1.5,
     pos: [0.52, 0.74, 0.62],
-    target: [0, 0.7, 0],
+    target: [0, 0.761, 0],
     fov: 52, spin: 0.85, exposure: 1.02, dust: 0.3, burst: 0, bloom: 0.34, accent: 0.7,
     focus: 0.56, aperture: 0.0016, sweep: 0.26,
     curve: 'inOutCubic',
@@ -51,7 +51,7 @@ const SHOTS = [
     // Pull back through the shoulder; the silhouette resolves.
     t: 3.1,
     pos: [1.35, 1.28, 1.95],
-    target: [0, 0.5, 0],
+    target: [0, 0.543, 0],
     fov: 44, spin: 3.4, exposure: 1.1, dust: 0.62, burst: 0.15, bloom: 0.4, accent: 1.25,
     focus: 1.95, aperture: 0.0008, sweep: 0.52,
     curve: 'inOutCubic',
@@ -60,7 +60,7 @@ const SHOTS = [
     // Ignition beat.
     t: 4.25,
     pos: [2.05, 1.0, 3.15],
-    target: [0, 0.56, 0],
+    target: [0, 0.609, 0],
     fov: 38, spin: 7.3, exposure: 1.14, dust: 0.78, burst: 1, bloom: 0.62, accent: 1.5,
     focus: 3.15, aperture: 0.00035, sweep: 0.74,
     curve: 'outExpo',
@@ -70,8 +70,8 @@ const SHOTS = [
     // with a printed face square on: the sleeve is drawn twice per revolution
     // and u = 0.25 sits on +X, so the settle is a quarter turn short.
     t: 6.2,
-    pos: [0.9, 0.95, 4.4],
-    target: [0, 0.74, 0],
+    pos: [0.98, 1.03, 4.78],
+    target: [0, 0.804, 0],
     fov: 30, spin: Math.PI * 4 - Math.PI / 2, exposure: 1.0, dust: 0.42, burst: 0, bloom: 0.2, accent: 1,
     focus: 4.4, aperture: 0.00004, sweep: 1,
     curve: 'outBack',
@@ -122,9 +122,9 @@ const STATIONS = [
     scene: 'fill',
     // A slow lateral track along the line, far enough back that whole cans
     // stay in frame — a cropped can cannot show off the thing it is here for.
-    from: { pos: [-4.4, 1.85, 4.3], target: [-1.5, 0.72, 0] },
+    from: { pos: [-4.4, 1.85, 4.3], target: [-1.5, 0.782, 0] },
     pos: [4.4, 1.7, 4.3],
-    target: [1.4, 0.72, 0],
+    target: [1.4, 0.782, 0],
     fov: 33, offsetX: -1.45, spin: 0, dust: 0, exposure: 1.0, pack: 0, opacity: 1, accent: 0,
     mDist: 1.5, mLift: -0.6,
   },
@@ -137,11 +137,11 @@ const STATIONS = [
     scene: 'packing',
     // Rides low beside the belt, then overtakes the line and comes round to
     // find the tray filling at the end of it. One continuous dolly, no cuts.
-    from: { pos: [4.9, 1.02, -5.4], target: [0, 0.62, -1.0] },
+    from: { pos: [4.9, 1.02, -5.4], target: [0, 0.674, -1.0] },
     // The arc keeps the lens outside the line instead of ploughing through it.
-    via: { pos: [6.6, 1.5, 3.4], target: [0, 0.6, 4.2] },
+    via: { pos: [6.6, 1.5, 3.4], target: [0, 0.652, 4.2] },
     pos: [4.8, 3.4, 15.2],
-    target: [0, 0.6, 8.9],
+    target: [0, 0.652, 8.9],
     fov: 31, offsetX: 1.9, spin: 0, dust: 0, exposure: 0.98, pack: 0, opacity: 1, accent: 0,
     mDist: 1.45, mLift: -0.8,
   },
@@ -151,10 +151,10 @@ const STATIONS = [
     id: 'reveal',
     selector: '#scene-reveal',
     at: 0.5,
-    from: { pos: [2.35, 1.7, 5.1], target: [0, 0.84, 0] },
-    via: { pos: [2.0, 0.95, 4.1], target: [0, 0.8, 0] },
-    pos: [1.0, 0.7, 3.35],
-    target: [0, 0.78, 0],
+    from: { pos: [2.55, 1.85, 5.54], target: [0, 0.913, 0] },
+    via: { pos: [2.17, 1.03, 4.46], target: [0, 0.869, 0] },
+    pos: [1.09, 0.76, 3.64],
+    target: [0, 0.848, 0],
     fov: 33, offsetX: -0.95, spin: 0.12, dust: 0.5, exposure: 1.06, pack: 0, opacity: 1, accent: 1.3,
     mDist: 1.34, mLift: -0.4,
   },
@@ -162,8 +162,8 @@ const STATIONS = [
     id: 'hero',
     selector: '#hero',
     at: 0.25, // fraction into the section where this station is fully reached
-    pos: [0.9, 0.95, 4.4],
-    target: [0, 0.74, 0],
+    pos: [0.98, 1.03, 4.78],
+    target: [0, 0.804, 0],
     fov: 30, offsetX: 0.86, spin: 0.085, dust: 0.42, exposure: 1.04, pack: 0, opacity: 1, accent: 1,
     mDist: 1.14, mLift: -0.46,
   },
@@ -172,8 +172,8 @@ const STATIONS = [
     selector: '#shop',
     at: 0.1,
     // The cards carry the product imagery here, so the can steps back and up.
-    pos: [1.5, 1.9, 6.2],
-    target: [0, 1.5, 0],
+    pos: [1.63, 2.06, 6.74],
+    target: [0, 1.63, 0],
     fov: 30, offsetX: 0.2, spin: 0.05, dust: 0.2, exposure: 0.9, pack: 0, opacity: 0, accent: 0.7,
     mDist: 1.2, mLift: -0.3,
   },
@@ -183,8 +183,8 @@ const STATIONS = [
     at: 0.34,
     // Raised three-quarter, looking down into the tray. The tray is 2.5 across,
     // so this sits much further back than the single-can shots.
-    pos: [2.6, 3.25, 5.95],
-    target: [0, 0.45, 0],
+    pos: [2.72, 3.46, 6.42],
+    target: [0, 0.489, 0],
     fov: 32, offsetX: 1.34, spin: 0.05, dust: 0.28, exposure: 0.96, pack: 1, opacity: 1, accent: 0.85,
     // The tray is far wider than a can, so narrow screens need it much further back.
     mDist: 1.9, mLift: 0.34,
@@ -194,8 +194,8 @@ const STATIONS = [
     selector: '#formula',
     at: 0.28,
     // Back to a single can, tight and slowly turning, opposite the copy.
-    pos: [0.72, 0.9, 3.9],
-    target: [0, 0.74, 0],
+    pos: [0.78, 0.98, 4.24],
+    target: [0, 0.804, 0],
     fov: 28, offsetX: 0.92, spin: 0.1, dust: 0.34, exposure: 1.02, pack: 0, opacity: 1, accent: 1.15,
     mDist: 1.3, mLift: -0.42,
   },
@@ -203,8 +203,8 @@ const STATIONS = [
     id: 'exit',
     selector: '#reviews',
     at: 0.15,
-    pos: [0.9, 1.5, 5.6],
-    target: [0, 1.2, 0],
+    pos: [0.98, 1.63, 6.08],
+    target: [0, 1.304, 0],
     fov: 30, offsetX: -0.3, spin: 0.06, dust: 0.1, exposure: 0.85, pack: 0, opacity: 0, accent: 0.6,
     mDist: 1.2, mLift: -0.3,
   },

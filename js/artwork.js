@@ -20,8 +20,8 @@ const BODY_H = 1024;
 // under the shoulder and stops just above the base flare, the way a real can
 // is decorated. These are texture rows, mapped by remapBodyUVs onto real
 // height, so they move whenever the profile does.
-const PRINT_TOP = 92;
-const PRINT_BOTTOM = 938;
+const PRINT_TOP = 84;
+const PRINT_BOTTOM = 957;
 const PRINT_H = PRINT_BOTTOM - PRINT_TOP;
 
 const PAPER = '#F6F3EE'; // off-white ink; pure white never looks printed

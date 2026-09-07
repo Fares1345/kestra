@@ -11,8 +11,12 @@
 
 import * as THREE from 'three';
 
-const R = 0.29; // body radius
-const H = 1.5; // overall height
+// A tall slim can, not a sleek one: 55.3 mm across and 163 mm tall, which is
+// a 2.95:1 silhouette rather than the 2.59:1 of a standard 355 mL sleek. The
+// volume still works — pi * 2.765^2 * 16.3 is 391 cm3 gross, and a 355 mL net
+// fill sits inside that once the base dome and headspace are taken out.
+const R = 0.2765; // body radius
+const H = 1.63; // overall height
 
 /* ------------------------------------------------------------------ *
  * profile builder with corner fillets
@@ -90,26 +94,26 @@ class Profile {
 // is ~51.5 mm across the seam. That is a 5 mm neck-in, not a 19 mm one: the
 // can is a straight cylinder for ~89% of its height and only steps in at the
 // very top. Necking it further is what turns a can into a bottle.
-const NECK_R = 0.2575; // outer radius at the seam
-const RIM_INNER_R = 0.235; // the lid panel inside the curl
-const RIM_TOP_Y = 1.4985; // crown of the rolled rim
-const LID_Y = 1.479; // lid panel, recessed ~2 mm below the crown
+const NECK_R = 0.254; // outer radius at the seam: a 200 end, 50.8 mm
+const RIM_INNER_R = 0.232; // the lid panel inside the curl
+const RIM_TOP_Y = 1.6285; // crown of the rolled rim
+const LID_Y = 1.608; // lid panel, recessed ~2 mm below the crown
 
 function bodyProfile() {
   return new Profile()
-    .at(0, 0.082) // centre of the concave base dome
-    .at(0.104, 0.075, 0.06)
-    .at(0.204, 0.024, 0.04)
-    .at(0.248, 0.002, 0.009) // the thin ring the can actually stands on
-    .at(0.268, 0.016, 0.008)
-    .at(R, 0.044, 0.024) // out to full diameter, and fast: the base is a
-    .at(R, 1.368, 0.018) //   narrow bright ring, not a thick dark foot
-    .at(0.276, 1.412, 0.042) // shoulder — one short, smooth sweep
-    .at(NECK_R, 1.451, 0.024) // neck
-    .at(NECK_R, 1.4715, 0.005)
-    .at(0.2615, 1.484, 0.006) // rolled rim, outer bulge
-    .at(0.2525, RIM_TOP_Y, 0.005) // crown of the rim
-    .at(RIM_INNER_R, 1.489, 0.005)
+    .at(0, 0.086) // centre of the concave base dome
+    .at(0.100, 0.078, 0.055)
+    .at(0.196, 0.024, 0.038)
+    .at(0.240, 0.002, 0.008) // the thin ring the can actually stands on
+    .at(0.258, 0.015, 0.007)
+    .at(R, 0.042, 0.022) // out to full diameter, and fast: the base is a
+    .at(R, 1.500, 0.016) //   narrow bright ring, not a thick dark foot
+    .at(0.266, 1.542, 0.038) // shoulder — one short, shallow sweep
+    .at(NECK_R, 1.580, 0.022) // neck: 4.5 mm of step, and that is all
+    .at(NECK_R, 1.600, 0.005)
+    .at(0.2585, 1.6135, 0.006) // rolled rim, outer bulge
+    .at(0.2495, RIM_TOP_Y, 0.005) // crown of the rim
+    .at(RIM_INNER_R, 1.6185, 0.005)
     .at(RIM_INNER_R, LID_Y)
     // 16 steps, not 7. At a 4 mm fillet radius seven segments are visible as
     // hard horizontal facets around the shoulder — the "grooves".
@@ -120,9 +124,9 @@ function lidProfile() {
   // Ordered outer to centre so the lathe normals face up.
   return new Profile()
     .at(RIM_INNER_R, LID_Y)
-    .at(0.205, 1.4735, 0.024)
-    .at(0.105, 1.4705, 0.17)
-    .at(0, 1.4695)
+    .at(0.202, 1.6025, 0.024)
+    .at(0.104, 1.5995, 0.17)
+    .at(0, 1.5985)
     .build(5);
 }
 
@@ -295,4 +299,4 @@ export function createCan({ segments = 160, maps, geometries = null }) {
   return group;
 }
 
-export const CAN_DIMENSIONS = { radius: R, height: H, rimTop: RIM_TOP_Y };
+export const CAN_DIMENSIONS = { radius: R, height: H, rimTop: RIM_TOP_Y, lidY: LID_Y };

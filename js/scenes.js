@@ -13,6 +13,7 @@
  */
 
 import * as THREE from 'three';
+import { CAN_DIMENSIONS } from './can.js';
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 /** Progress window helper: 0 before `a`, 1 after `b`, smooth between. */
@@ -313,6 +314,9 @@ export function createMixingScene({ materials, accent }) {
  * then the lids come down and seat. All of it keyed to scroll.
  */
 export function createFillingScene({ materials, geometries, canMaterials, accent }) {
+  // Where a lid comes to rest, taken from the can itself so it cannot drift
+  // out of sync the next time the profile changes.
+  const LID_SEAT_Y = CAN_DIMENSIONS.lidY;
   const group = new THREE.Group();
   // Four stations, not five: the fifth only ever sat under the copy column.
   const COUNT = 4;
@@ -422,7 +426,7 @@ export function createFillingScene({ materials, geometries, canMaterials, accent
 
         // Then the lid descends and seats.
         const seatP = range(progress, 0.56 + offset, 0.88 + offset);
-        lids[i].position.y = 2.4 - seatP * 0.926;
+        lids[i].position.y = 2.4 - seatP * (2.4 - LID_SEAT_Y);
         lids[i].visible = seatP > 0.001;
       });
     },
