@@ -652,9 +652,13 @@ export function paintSurfaceSheets({ droplets = true, beadCount = 620 } = {}) {
   const r = orm.ctx;
   const n = nrm.ctx;
 
-  r.fillStyle = 'rgb(255,46,255)'; // polished aluminium, fully metallic
+  r.fillStyle = 'rgb(255,62,255)'; // polished aluminium, fully metallic
   r.fillRect(0, 0, BODY_W, BODY_H);
-  r.fillStyle = 'rgb(255,77,143)'; // varnished print, ink knocks metalness back
+  // Printed ink is a dielectric over a white base coat, so its metalness is
+  // near zero — the previous 0.56 left half the label with no diffuse term at
+  // all, which is why the colour washed to white under a strip light instead
+  // of holding. The unprinted bands above and below stay fully metallic.
+  r.fillStyle = 'rgb(255,84,26)';
   r.fillRect(0, PRINT_TOP, BODY_W, PRINT_H);
 
   r.save();

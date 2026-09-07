@@ -60,6 +60,13 @@ generated at load time:
   backdrop, because a product photographed in a room does not float in a void,
   and beneath it a mirrored body mesh fading out within a fraction of the can's
   height.
+- **Print is not metal** (`js/artwork.js`) — the printed band's metalness sits
+  near zero while the bare bands above and below stay fully metallic. This is
+  the single biggest realism lever on the whole can: a metal has no diffuse
+  term, so when the label was left half-metallic its colour could only come
+  back as specular tint, and under a strip light the orange washed to white.
+  Ink is a dielectric over a white base coat, and once it is modelled that way
+  the print holds its colour and the type stays crisp through the highlight.
 - **Realism details** — the body material is anisotropic with the grain running
   around the circumference, which is the direction rolled aluminium is actually
   brushed. The surface carries fine scratches, fingerprint smudges and settled

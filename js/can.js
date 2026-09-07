@@ -245,8 +245,10 @@ export function createCan({ segments = 160, maps, geometries = null }) {
     metalness: 1,
     roughness: 1,
     // Varnish over the print.
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.22,
+    // A tighter, weaker varnish. At 0.6 the clearcoat laid a broad white veil
+    // over the print, which read as haze rather than gloss.
+    clearcoat: 0.34,
+    clearcoatRoughness: 0.14,
     // Rolled aluminium stretches its highlight along the grain. UV u runs
     // around the can, so rotation 0 lines the stretch up with the brushing.
     anisotropy: 0.62,

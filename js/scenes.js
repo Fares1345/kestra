@@ -399,6 +399,13 @@ export function createFillingScene({ materials, geometries, canMaterials, accent
   rim.position.set(3.2, 2.6, -3.6);
   group.add(rim);
 
+  // The single overhead key sat off to one side, so the far end of the line
+  // fell away into black. A soft frontal wash keeps every printed face on the
+  // line readable, which is the whole point of showing the line.
+  const face = new THREE.DirectionalLight(0xdce7fa, 1.6);
+  face.position.set(1.5, 2.6, 5.5);
+  group.add(face);
+
   return {
     group,
     update(dt, progress) {

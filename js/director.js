@@ -72,7 +72,7 @@ const SHOTS = [
     t: 6.2,
     pos: [0.9, 0.95, 4.4],
     target: [0, 0.74, 0],
-    fov: 30, spin: Math.PI * 4 - Math.PI / 2, exposure: 1.04, dust: 0.42, burst: 0, bloom: 0.34, accent: 1,
+    fov: 30, spin: Math.PI * 4 - Math.PI / 2, exposure: 1.0, dust: 0.42, burst: 0, bloom: 0.2, accent: 1,
     focus: 4.4, aperture: 0.00004, sweep: 1,
     curve: 'outBack',
   },
