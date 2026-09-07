@@ -113,6 +113,28 @@ function buildStudio() {
   stripR.rotation.y = -Math.PI * 0.44;
   room.add(stripR);
 
+  // Dark occluders between the sources. The gaps are what put contrast into
+  // the reflection: unbroken softboxes reflect as one smooth wash.
+  for (const [x, y, z, ry, w, h] of [
+    [-3.05, 3.4, 2.3, Math.PI * 0.34, 0.5, 8],
+    [-3.05, -0.9, 2.3, Math.PI * 0.34, 0.5, 8],
+    [3.45, 3.2, 1.0, -Math.PI * 0.44, 0.6, 8],
+  ]) {
+    const bar = glowPanel(w, h, 0x05060a, 1);
+    bar.position.set(x, y, z);
+    bar.rotation.y = ry;
+    room.add(bar);
+  }
+
+  // Two small hard accents. Every real set has a few little bright things in
+  // it, and they are what read as specular sparkle rather than sheen.
+  for (const [x, y, z, i] of [[-1.9, 0.35, 3.1, 6.5], [2.4, 2.9, 2.2, 5]]) {
+    const spark = glowPanel(0.32, 0.32, 0xffffff, i);
+    spark.position.set(x, y, z);
+    spark.lookAt(0, 0.7, 0);
+    room.add(spark);
+  }
+
   const kicker = glowPanel(1.4, 9, 0xdce6ff, 3.2);
   kicker.position.set(1.6, 1.6, -3.6);
   kicker.rotation.y = Math.PI * 0.06;
@@ -337,6 +359,14 @@ export function createStage(canvas, { quality, product, products }) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // The project had no shadow maps at all — the only shadow was a painted
+  // sprite, which cannot respond to the light and cannot let the can shade
+  // itself. An object that casts nothing reads as pasted onto the frame no
+  // matter how good its materials are. Phones keep the painted pool.
+  if (quality.tier !== 'low') {
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  }
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.05, 60);
@@ -409,6 +439,11 @@ export function createStage(canvas, { quality, product, products }) {
 
   const can = createCan({ maps, geometries: heroGeometries });
   const canPivot = new THREE.Group();
+  can.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true;
+    o.receiveShadow = true;
+  });
   canPivot.add(can);
   const heroRig = new THREE.Group();
   heroRig.add(canPivot);
@@ -420,7 +455,7 @@ export function createStage(canvas, { quality, product, products }) {
     new THREE.MeshBasicMaterial({
       map: new THREE.CanvasTexture(makeContactShadow()),
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.55,
       depthWrite: false,
     })
   );
@@ -448,6 +483,7 @@ export function createStage(canvas, { quality, product, products }) {
       depthWrite: false,
     })
   );
+  floor.receiveShadow = true;
   floor.rotation.x = -Math.PI / 2;
   scene.add(floor);
 
@@ -485,7 +521,25 @@ export function createStage(canvas, { quality, product, products }) {
   /* ---------- lights ---------- */
   const key = new THREE.DirectionalLight(0xfff4ea, 2.4);
   key.position.set(-2.4, 4.4, 3.2);
+  if (renderer.shadowMap.enabled) {
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    const c = key.shadow.camera;
+    c.near = 0.5;
+    c.far = 14;
+    c.left = -2.6;
+    c.right = 2.6;
+    c.top = 3.4;
+    c.bottom = -1.2;
+    c.updateProjectionMatrix();
+    // Tight, because the subject is small and close: a loose bias is what
+    // makes a shadow detach from the thing casting it.
+    key.shadow.bias = -0.00035;
+    key.shadow.normalBias = 0.012;
+    key.shadow.radius = 3;
+  }
   scene.add(key);
+  scene.add(key.target);
 
   const rimWarm = new THREE.DirectionalLight(new THREE.Color(product.accent), 2.1);
   rimWarm.position.set(2.6, 2.2, -3.4);

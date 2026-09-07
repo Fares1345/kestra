@@ -171,9 +171,12 @@ reverse the order. Tracked text is Latin-only.
 - Drawing stops when the subject scrolls out of frame and when the tab is hidden.
 - Only the colour sheet is rebuilt per flavour; surface maps are shared by all
   six, and the hero can and the pack share one geometry set.
-- Real shadow maps were dropped in favour of a soft contact pool — with the
-  floor faded back they only ever showed as a hard ellipse, and they cost a
-  depth pass.
+- Real shadow maps are on above the low tier: the key light casts, the can
+  casts and receives, and the floor receives, so the tab shades the lid and
+  the shoulder shades the body. Phones keep the painted contact pool instead,
+  which costs nothing. Running with no shadows at all — as this did — is the
+  single loudest cue that an object was pasted into a frame rather than
+  photographed in it.
 
 ## Fallbacks
 
