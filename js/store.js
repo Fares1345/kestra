@@ -615,10 +615,12 @@ export function createStore({ onFlavour, onPackChange } = {}) {
       <div class="pay__methods" role="radiogroup" aria-label="${esc(t('pay.title'))}">
         <button class="pay__method${payMethod === 'applepay' ? ' is-active' : ''}" type="button"
                 role="radio" aria-checked="${payMethod === 'applepay'}" data-pay-method="applepay">
-          <svg viewBox="0 0 40 17" width="40" height="17" aria-hidden="true" focusable="false">
-            <path fill="currentColor" d="M7.3 2.2c.5-.6.8-1.4.7-2.2-.7 0-1.6.5-2.1 1.1-.5.5-.9 1.4-.7 2.2.8 0 1.6-.4 2.1-1.1Zm.7 1.2c-1.2-.1-2.2.7-2.7.7-.6 0-1.4-.6-2.3-.6-1.2 0-2.3.7-2.9 1.8-1.2 2.1-.3 5.3.9 7 .6.9 1.3 1.8 2.2 1.8.9 0 1.2-.6 2.3-.6 1.1 0 1.4.6 2.3.6.9 0 1.5-.8 2.1-1.7.7-1 .9-1.9.9-2-.1 0-1.8-.7-1.8-2.7 0-1.6 1.3-2.4 1.4-2.5-.8-1.1-2-1.2-2.4-1.3Z"/>
-            <text x="13" y="13" font-size="11" font-weight="600" fill="currentColor" font-family="system-ui, sans-serif">Pay</text>
-          </svg>
+          <span class="pay__apple" aria-hidden="true">
+            <svg viewBox="0 0 13.4 16.2" width="14" height="17" focusable="false">
+              <path fill="currentColor" d="M8.63 3.3c.53-.66.89-1.56.79-2.47-.77.04-1.71.52-2.26 1.18-.5.58-.93 1.5-.81 2.38.86.07 1.74-.44 2.28-1.09Zm.78 1.24c-1.25-.07-2.31.71-2.9.71-.6 0-1.51-.67-2.48-.65-1.28.02-2.46.74-3.11 1.89-1.33 2.3-.35 5.71 1.94 7.58.6.6 1.31 1.27 2.25 1.24.9-.04 1.24-.58 2.33-.58 1.09 0 1.4.58 2.35.56.97-.02 1.59-.6 2.18-1.2.69-.69.97-1.36.99-1.4-.02-.01-1.9-.73-1.92-2.9-.02-1.81 1.48-2.68 1.55-2.72-.85-1.25-2.17-1.39-2.63-1.42Z"/>
+            </svg>
+            <b>Pay</b>
+          </span>
           <span class="sr-only">${esc(t('pay.applePay'))}</span>
         </button>
         <button class="pay__method${payMethod === 'mada' ? ' is-active' : ''}" type="button"

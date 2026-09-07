@@ -1749,6 +1749,21 @@ body.no-webgl .hero::after {
 }
 .pay__method:hover { border-color: var(--text-3); transform: translateY(-1px); }
 .pay__method.is-active { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, var(--surface-2)); }
+/* The wordmark was an SVG <text> in system-ui, so it drew in whatever face
+   each device happened to resolve — a different width, weight and baseline
+   everywhere, and in Arabic an Arabic-preferring font with its own metrics.
+   Same construction as the mada mark below instead: the glyph as a path, the
+   word as real text in the self-hosted family the rest of the page uses, so
+   it renders identically wherever it loads. */
+.pay__apple { display: inline-flex; align-items: center; gap: 2px; }
+.pay__apple svg { display: block; margin-block-start: -2px; }
+.pay__apple b {
+  font-family: var(--font-body);
+  font-size: 15.5px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+[dir='rtl'] .pay__apple { direction: ltr; }
 .pay__mada { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 700; }
 .pay__mada i { width: 7px; height: 7px; border-radius: 50%; background: #84c1e8; }
 .pay__mada i:last-of-type { background: #57b847; margin-inline-end: 3px; }
