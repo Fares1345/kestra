@@ -119,6 +119,60 @@ function mixHex(a, b, t) {
   return `#${to(r1 + (r2 - r1) * t)}${to(g1 + (g2 - g1) * t)}${to(b1 + (b2 - b1) * t)}`;
 }
 
+/**
+ * Screen accent -> printed ink.
+ *
+ * The palette in data.js is a UI palette: it has to carry buttons, the logo
+ * and the accent rim, so several of its colours sit at full saturation.
+ * Solstice and Aurora are both at 100%. Nothing printed reaches that — litho
+ * ink on aluminium has a gamut well inside sRGB, and a can that ignores the
+ * ceiling reads as a rendering of a can rather than a photograph of one.
+ *
+ * So the sleeve gets its own colours: saturation capped where it exceeds what
+ * ink can hold, and nothing else touched. The ceiling only bites on the two
+ * that break it — Solstice 100 -> 82, Aurora 100 -> 82 — and Glacier, Vesper
+ * and Verde come through unchanged, so the range keeps its identity. Darkening
+ * the ink as well was tried and reverted: with the environment already dialled
+ * back it turned the blood orange to terracotta.
+ *
+ * The UI keeps the vivid accent it was chosen for; only the artwork converts.
+ */
+const INK_SAT_CEILING = 0.82;
+
+function toInk(hex) {
+  const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (!d) return hex;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+
+  const s2 = Math.min(s, INK_SAT_CEILING);
+  if (s2 === s) return hex;
+  const q = l < 0.5 ? l * (1 + s2) : l + s2 - l * s2;
+  const pp = 2 * l - q;
+  const chan = (t) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return pp + (q - pp) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return pp + (q - pp) * (2 / 3 - t) * 6;
+    return pp;
+  };
+  const to = (x) => Math.round(x * 255).toString(16).padStart(2, '0');
+  return `#${to(chan(h + 1 / 3))}${to(chan(h))}${to(chan(h - 1 / 3))}`;
+}
+
+/** The product as the printer sees it. Only the sleeve uses this. */
+function inkProduct(product) {
+  return { ...product, accent: toInk(product.accent), accentDeep: toInk(product.accentDeep) };
+}
+
 const rgba = (hex, a) => {
   const [r, g, b] = hexToRgb(hex);
   return `rgba(${r},${g},${b},${a})`;
@@ -639,6 +693,7 @@ function paintShoulderBand(ctx, product) {
 }
 
 export function paintColourSheet(product) {
+  product = inkProduct(product);
   const rng = seeded(seedFrom(product.id));
   const { canvas, ctx: c } = surface(BODY_W, BODY_H);
 
