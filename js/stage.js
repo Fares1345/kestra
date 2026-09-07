@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 
@@ -389,6 +390,43 @@ export function createStage(canvas, { quality, product, products }) {
   });
 
   scene.environment = envStudio.texture;
+
+  /* ---------- a captured environment, on the can only ---------- */
+  // The rooms above are a handful of emissive rectangles, and a mirror-finish
+  // metal reflects those as smooth gradients — which is the CG tell. This is a
+  // real captured studio (the set react-three-fiber ships as
+  // <Environment preset="studio" />), and it goes on the can's own materials
+  // rather than on scene.environment, because the set is graded dark: put it
+  // on the scene and it lights the seven-unit floor disc too and floods the
+  // frame white. Per-material envMap gives the aluminium something real to
+  // reflect and leaves the room alone.
+  async function loadEnvironments() {
+    const tex = await new Promise((res) =>
+      new EXRLoader().load('./assets/hdri/studio.exr', res, undefined, () => res(null))
+    );
+    if (!tex) return;
+    const captured = pmrem.fromEquirectangular(tex).texture;
+    tex.dispose();
+
+    const dress = (mat, intensity) => {
+      if (!mat) return;
+      mat.envMap = captured;
+      mat.envMapIntensity = intensity;
+      mat.needsUpdate = true;
+    };
+    const m = can.userData.materials;
+    // A captured studio carries far more energy than the procedural room the
+    // materials were balanced against, so it comes in low: enough for the
+    // metal to have something real in its reflection, not enough to wash the
+    // print out. The bare-metal tab can take much more than the printed body.
+    dress(m.body, 0.16);
+    dress(m.lid, 0.2);
+    dress(m.tab, 0.5);
+    if (reflection) dress(reflection.material, 0.07);
+    capturedEnv = captured;
+    drawFrame();
+  }
+  let capturedEnv = null;
 
   /* ---------- textures ---------- */
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
@@ -881,6 +919,7 @@ export function createStage(canvas, { quality, product, products }) {
       sceneProgress = progress;
     },
     prewarmScene: (id) => ensureScene(id),
+    loadEnvironments,
 
     /* ---- pack ---- */
     ensurePack,

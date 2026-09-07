@@ -223,6 +223,9 @@ async function boot() {
   director.prime();
   setProgress(1);
 
+  // Give the can a real captured studio to reflect. Off the critical path.
+  stage.loadEnvironments?.();
+
   stage.update = (dt) => director.update(dt);
   stage.start();
 

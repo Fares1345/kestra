@@ -25,7 +25,7 @@ const BODY_H = 1024;
 // wide exposed silver shoulder is a mock-up tell, not a can. Rows 16..84 of
 // this sheet land exactly on the shoulder and neck; the face layout below
 // still starts at PRINT_TOP, so the design itself is untouched.
-const SHOULDER_TOP = 16;
+const SHOULDER_TOP = 0;
 const PRINT_TOP = 84;
 const PRINT_BOTTOM = 978;
 const PRINT_H = PRINT_BOTTOM - PRINT_TOP;
@@ -866,13 +866,16 @@ export function paintLidSheets() {
   const r = rgh.ctx;
   const mid = S / 2;
 
-  c.fillStyle = '#B9BEC4';
+  // A black lacquered end. The coating is sprayed over the stamped aluminium,
+  // so the die marks are still under it but muted, and the only bare metal
+  // left is the rivet, which is formed after the lacquer goes on.
+  c.fillStyle = '#0c0d0f';
   c.fillRect(0, 0, S, S);
 
-  // Concentric marks left by the stamping die.
+  // Concentric marks left by the stamping die, read through the coating.
   c.save();
   for (let i = 0; i < 320; i++) {
-    c.strokeStyle = `rgba(255,255,255,${0.02 + Math.random() * 0.05})`;
+    c.strokeStyle = `rgba(255,255,255,${0.008 + Math.random() * 0.022})`;
     c.lineWidth = 0.6 + Math.random() * 1.6;
     c.beginPath();
     c.arc(mid, mid, (i / 320) * mid, 0, Math.PI * 2);
@@ -880,7 +883,7 @@ export function paintLidSheets() {
   }
   c.restore();
 
-  c.strokeStyle = 'rgba(70,76,84,0.5)';
+  c.strokeStyle = 'rgba(0,0,0,0.55)';
   c.lineWidth = 26;
   c.beginPath();
   c.arc(mid, mid, mid * 0.9, 0, Math.PI * 2);
@@ -892,12 +895,12 @@ export function paintLidSheets() {
   c.save();
   c.translate(mid, mid - S * 0.2155);
   scorePath(c, S * 0.16, S * 0.125);
-  c.strokeStyle = 'rgba(46,52,60,0.95)';
+  c.strokeStyle = 'rgba(0,0,0,0.9)';
   c.lineWidth = 5.5;
   c.stroke();
   scorePath(c, S * 0.16, S * 0.125);
   c.translate(0, 2.5);
-  c.strokeStyle = 'rgba(255,255,255,0.34)';
+  c.strokeStyle = 'rgba(255,255,255,0.16)';
   c.lineWidth = 1.8;
   c.stroke();
   c.restore();
@@ -906,9 +909,9 @@ export function paintLidSheets() {
   c.save();
   c.translate(mid, mid);
   const rv = c.createRadialGradient(-4, -6, 1, 0, 0, 26);
-  rv.addColorStop(0, '#EFF2F5');
-  rv.addColorStop(0.6, '#9BA1A8');
-  rv.addColorStop(1, '#6C727A');
+  rv.addColorStop(0, '#FDFEFF');
+  rv.addColorStop(0.6, '#C4CAD2');
+  rv.addColorStop(1, '#878E97');
   c.fillStyle = rv;
   c.beginPath();
   c.arc(0, 0, 24, 0, Math.PI * 2);
@@ -916,9 +919,9 @@ export function paintLidSheets() {
   c.restore();
 
   // Embossed mark and lot code, the way a real lid is stamped.
-  drawMark(c, mid + S * 0.3, mid, 42, 'rgba(96,102,110,0.45)');
+  drawMark(c, mid + S * 0.3, mid, 42, 'rgba(255,255,255,0.12)');
   c.save();
-  c.fillStyle = 'rgba(90,96,104,0.5)';
+  c.fillStyle = 'rgba(255,255,255,0.13)';
   setFont(c, { weight: 600, size: 20, family: 'Inter Variable' });
   c.textAlign = 'center';
   c.translate(mid, mid);
@@ -926,17 +929,22 @@ export function paintLidSheets() {
   tracked(c, BRAND.name, 0, -mid * 0.76, 8);
   c.restore();
 
-  r.fillStyle = '#3a3a3a';
+  r.fillStyle = 'rgb(0,32,16)'; // lacquer: glossy, and a dielectric
   r.fillRect(0, 0, S, S);
   r.save();
   for (let i = 0; i < 260; i++) {
-    r.strokeStyle = `rgba(255,255,255,${Math.random() * 0.12})`;
+    r.strokeStyle = `rgba(0,255,16,${Math.random() * 0.06})`;
     r.lineWidth = 1 + Math.random() * 2;
     r.beginPath();
     r.arc(mid, mid, (i / 260) * mid, 0, Math.PI * 2);
     r.stroke();
   }
   r.restore();
+  // The rivet is formed after the coating, so it is bare aluminium.
+  r.fillStyle = 'rgb(0,46,96)';
+  r.beginPath();
+  r.arc(mid, mid, 33, 0, Math.PI * 2);
+  r.fill();
 
   /* ---- relief ---- */
   // Paint a height field, then differentiate it. The lathe gives the

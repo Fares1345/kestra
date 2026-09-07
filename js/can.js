@@ -195,25 +195,53 @@ function ring(cx, cy, rx, ry, steps) {
   return path;
 }
 
+/**
+ * A C-shaped slot: the narrow gap punched around the lift pad on a real tab,
+ * open at the rivet end so the pad stays joined to the tab there. Built from
+ * explicit points, walking the outer edge and back along the inner one — an
+ * arc helper would leave a duplicated vertex and the bevel divides by it.
+ */
+function cSlot(cx, cy, rx, ry, w, steps) {
+  const path = new THREE.Path();
+  const a0 = -Math.PI * 0.63;
+  const a1 = Math.PI * 0.63;
+  for (let i = 0; i <= steps; i++) {
+    const a = a0 + (a1 - a0) * (i / steps);
+    const x = cx + Math.cos(a) * (rx + w / 2);
+    const y = cy + Math.sin(a) * (ry + w / 2);
+    if (i === 0) path.moveTo(x, y);
+    else path.lineTo(x, y);
+  }
+  for (let i = steps; i >= 0; i--) {
+    const a = a0 + (a1 - a0) * (i / steps);
+    path.lineTo(cx + Math.cos(a) * (rx - w / 2), cy + Math.sin(a) * (ry - w / 2));
+  }
+  path.closePath();
+  return path;
+}
+
 function tabGeometry() {
   // Laid out in the tab's own plane, in the same units as the can: a narrow
   // nose over the rivet widening to a rounded tail you can get a finger under.
   const shape = new THREE.Shape();
-  const noseX = -0.0957;
-  const noseW = 0.0411;
-  const tailX = 0.1334;
-  const tailW = 0.0734;
+  // Narrow at the nose, widening to a broad rounded lift end — the stadium
+  // silhouette of a stay-on tab, not a ring with a hole punched through it.
+  const noseX = -0.098;
+  const noseW = 0.029;
+  const tailX = 0.130;
+  const tailW = 0.064;
 
-  shape.moveTo(-0.0556, -noseW);
+  shape.moveTo(-0.060, -noseW);
   shape.quadraticCurveTo(noseX, -noseW, noseX, 0);
-  shape.quadraticCurveTo(noseX, noseW, -0.0556, noseW);
-  shape.lineTo(0.0778, tailW);
+  shape.quadraticCurveTo(noseX, noseW, -0.060, noseW);
+  shape.lineTo(0.062, tailW);
   shape.quadraticCurveTo(tailX, tailW, tailX, 0);
-  shape.quadraticCurveTo(tailX, -tailW, 0.0778, -tailW);
+  shape.quadraticCurveTo(tailX, -tailW, 0.062, -tailW);
   shape.closePath();
 
-  shape.holes.push(ring(0.0567, 0, 0.0512, 0.0367, 30)); // finger hole
-  shape.holes.push(ring(-0.0567, 0, 0.0155, 0.0155, 16)); // rivet hole
+  // The lift pad stays solid; only a slot is punched round it.
+  shape.holes.push(cSlot(0.070, 0, 0.049, 0.039, 0.010, 26));
+  shape.holes.push(ring(-0.058, 0, 0.0155, 0.0155, 16)); // rivet hole
 
   const g = new THREE.ExtrudeGeometry(shape, {
     depth: 0.007,
@@ -247,7 +275,7 @@ export function buildCanGeometries({ segments = 160, tab = true } = {}) {
 // A real end is riveted dead centre, and the tab hangs off that point: nose
 // toward the score, finger lift the other way. Placing the tab by its middle
 // instead put the rivet off-centre and swung the nose to the wrong side.
-export const TAB_OFFSET = { y: LID_Y + 0.008, z: -0.0567 };
+export const TAB_OFFSET = { y: LID_Y + 0.008, z: -0.058 };
 
 /**
  * Build the can. `maps` carries the canvases from artwork.js; the caller owns
@@ -285,14 +313,19 @@ export function createCan({ segments = 160, maps, geometries = null }) {
   const lidGeo = geo.lid;
   const lidMat = new THREE.MeshPhysicalMaterial({
     map: maps.lidColour,
+    // Roughness in green, metalness in blue: the lacquer is a glossy
+    // dielectric and the rivet is bare metal, from one texture.
     roughnessMap: maps.lidRoughness,
+    metalnessMap: maps.lidRoughness,
     normalMap: maps.lidNormal,
     normalScale: new THREE.Vector2(1.1, 1.1),
     metalness: 1,
     roughness: 1,
-    // A can lid is stamped, not polished; at hero intensity it mirrors the key
-    // light straight back down the lens and blows out.
-    envMapIntensity: 0.7,
+    // Sprayed lacquer over stamped aluminium: the coat is what you see, and
+    // it is wet-looking.
+    clearcoat: 1,
+    clearcoatRoughness: 0.05,
+    envMapIntensity: 1.15,
   });
   const lid = new THREE.Mesh(lidGeo, lidMat);
   group.add(lid);
