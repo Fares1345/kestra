@@ -97,28 +97,34 @@ function buildStudio() {
   room.add(key);
 
   // The two tall strips are what make aluminium look like aluminium.
-  const stripL = glowPanel(0.75, 11, 0xf2f6ff, 9.5);
+  // Broad, soft softboxes. Narrow bright strips throw a hard vertical bar down
+  // a cylinder; a real product table uses large sources close in, which wrap
+  // the curve instead of cutting a stripe across it.
+  const stripL = glowPanel(2.3, 11, 0xf2f6ff, 4.4);
   stripL.position.set(-3.5, 1.4, 1.9);
   stripL.rotation.y = Math.PI * 0.34;
   room.add(stripL);
 
-  const stripR = glowPanel(1.15, 11, 0xffffff, 7.2);
+  const stripR = glowPanel(2.7, 11, 0xffffff, 3.6);
   stripR.position.set(3.9, 1.4, 0.6);
   stripR.rotation.y = -Math.PI * 0.44;
   room.add(stripR);
 
-  const kicker = glowPanel(0.5, 9, 0xdce6ff, 6);
+  const kicker = glowPanel(1.4, 9, 0xdce6ff, 3.2);
   kicker.position.set(1.6, 1.6, -3.6);
   kicker.rotation.y = Math.PI * 0.06;
   room.add(kicker);
 
-  const top = glowPanel(7, 5, 0xffffff, 0.95);
+  const top = glowPanel(7, 5, 0xffffff, 1.5);
   top.position.set(0.4, 6.2, 0.2);
   top.rotation.x = Math.PI / 2;
   room.add(top);
 
-  const bounce = glowPanel(6, 2.6, 0xffd8b4, 0.85);
-  bounce.position.set(1.4, -1.6, 3);
+  // A bright bounce card low and close, so the base flare comes back as a
+  // metal ring. Left dark it merges with the black info panel above it and
+  // the bottom of the can reads as thick smoked glass.
+  const bounce = glowPanel(6, 3.2, 0xffd8b4, 2.4);
+  bounce.position.set(1.2, -1.05, 2.6);
   bounce.rotation.x = -Math.PI * 0.22;
   room.add(bounce);
 

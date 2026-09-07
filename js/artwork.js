@@ -16,8 +16,12 @@ import { BRAND } from './data.js';
 const BODY_W = 2048;
 const BODY_H = 1024;
 
-const PRINT_TOP = 189;
-const PRINT_BOTTOM = 939;
+// The print band is pinned to the straight part of the body: it starts just
+// under the shoulder and stops just above the base flare, the way a real can
+// is decorated. These are texture rows, mapped by remapBodyUVs onto real
+// height, so they move whenever the profile does.
+const PRINT_TOP = 92;
+const PRINT_BOTTOM = 938;
 const PRINT_H = PRINT_BOTTOM - PRINT_TOP;
 
 const PAPER = '#F6F3EE'; // off-white ink; pure white never looks printed
@@ -410,7 +414,7 @@ const BACKGROUNDS = {
     field.addColorStop(1, p.accentDeep);
     ctx.fillStyle = field;
     ctx.fillRect(0, PRINT_TOP, BODY_W, PRINT_H);
-    const panelTop = PRINT_TOP + PRINT_H * 0.715;
+    const panelTop = PRINT_TOP + PRINT_H * 0.775;
     ctx.fillStyle = p.ink;
     ctx.fillRect(0, panelTop, BODY_W, PRINT_BOTTOM - panelTop);
     ctx.fillStyle = mixHex(p.accent, '#ffffff', 0.45);
@@ -497,7 +501,7 @@ const BACKGROUNDS = {
     ctx.fillRect(BODY_W * 0.0, PRINT_TOP, BODY_W * 0.12, PRINT_H);
     ctx.fillRect(BODY_W * 0.38, PRINT_TOP, BODY_W * 0.24, PRINT_H);
     ctx.fillRect(BODY_W * 0.88, PRINT_TOP, BODY_W * 0.12, PRINT_H);
-    const panelTop = PRINT_TOP + PRINT_H * 0.73;
+    const panelTop = PRINT_TOP + PRINT_H * 0.79;
     ctx.fillStyle = p.ink;
     ctx.fillRect(0, panelTop, BODY_W, PRINT_BOTTOM - panelTop);
     ctx.fillStyle = mixHex(p.accent, '#ffffff', 0.4);
@@ -567,7 +571,7 @@ function paintSeamPanel(ctx, cx, product, rng) {
   const bcW = 150;
   const bcH = 92;
   const bx = cx - bcW / 2;
-  const by = top + PRINT_H * 0.72;
+  const by = top + PRINT_H * 0.78;
   ctx.fillStyle = PAPER;
   ctx.fillRect(bx - 12, by - 12, bcW + 24, bcH + 44);
   ctx.fillStyle = '#101010';
@@ -652,7 +656,7 @@ export function paintSurfaceSheets({ droplets = true, beadCount = 620 } = {}) {
   const r = orm.ctx;
   const n = nrm.ctx;
 
-  r.fillStyle = 'rgb(255,62,255)'; // polished aluminium, fully metallic
+  r.fillStyle = 'rgb(255,70,255)'; // polished aluminium, fully metallic
   r.fillRect(0, 0, BODY_W, BODY_H);
   // Printed ink is a dielectric over a white base coat, so its metalness is
   // near zero — the previous 0.56 left half the label with no diffuse term at
@@ -661,12 +665,15 @@ export function paintSurfaceSheets({ droplets = true, beadCount = 620 } = {}) {
   r.fillStyle = 'rgb(255,84,26)';
   r.fillRect(0, PRINT_TOP, BODY_W, PRINT_H);
 
+  // Mill lines on the bare metal. These are confined to the two unprinted
+  // bands, and those bands are now narrow — 900 of them packed into ~90 rows
+  // stopped reading as fine grain and started reading as machined grooves.
   r.save();
-  r.globalAlpha = 0.45;
-  for (let i = 0; i < 900; i++) {
+  r.globalAlpha = 0.16;
+  for (let i = 0; i < 190; i++) {
     const y = rng() < 0.5 ? rng() * PRINT_TOP : PRINT_BOTTOM + rng() * (BODY_H - PRINT_BOTTOM);
     const x = rng() * BODY_W;
-    r.fillStyle = rng() > 0.5 ? 'rgb(255,66,255)' : 'rgb(255,30,255)';
+    r.fillStyle = rng() > 0.5 ? 'rgb(255,70,255)' : 'rgb(255,52,255)';
     r.fillRect(x, y, 40 + rng() * 220, 1);
   }
   r.restore();

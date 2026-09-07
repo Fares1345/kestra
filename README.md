@@ -46,6 +46,15 @@ generated at load time:
   what catch the long vertical highlights you read as aluminium. The lid is a
   separate lathe with plan-view UVs, and the pull tab is an extruded shape with a
   finger hole and a rivet hole.
+
+  The proportions are the whole game, and getting them wrong is what makes a
+  can read as a bottle. A real 58 mm sleek can is closed with a 200-series
+  end — about 51.5 mm across the seam — so the neck-in is roughly 5 mm, and
+  the body is a straight cylinder for ~91% of its height before one short
+  shoulder. Necking further, or starting the shoulder lower, immediately
+  produces a metallic bottle. The fillets are also built with 16 arc steps
+  rather than 7: at a 4 mm radius, seven segments show up as hard horizontal
+  facets around the shoulder that look like machined grooves.
 - **Artwork** (`js/artwork.js`) — the body is unwrapped to a single 2048×1024
   sheet and painted on a 2D canvas. Each flavour has its own `design` —
   `block`, `gradient`, `split`, `band`, `outline`, `duo` — so the six cans are

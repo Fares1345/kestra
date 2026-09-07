@@ -86,36 +86,43 @@ class Profile {
   }
 }
 
-const RIM_INNER_R = 0.172;
-const RIM_TOP_Y = 1.495;
-const LID_Y = 1.474;
+// A real 355 mL sleek can is a 58 mm body closed with a 200-series end, which
+// is ~51.5 mm across the seam. That is a 5 mm neck-in, not a 19 mm one: the
+// can is a straight cylinder for ~89% of its height and only steps in at the
+// very top. Necking it further is what turns a can into a bottle.
+const NECK_R = 0.2575; // outer radius at the seam
+const RIM_INNER_R = 0.235; // the lid panel inside the curl
+const RIM_TOP_Y = 1.4985; // crown of the rolled rim
+const LID_Y = 1.479; // lid panel, recessed ~2 mm below the crown
 
 function bodyProfile() {
   return new Profile()
-    .at(0, 0.118) // centre of the concave base dome
-    .at(0.115, 0.108, 0.09)
-    .at(0.208, 0.042, 0.05)
-    .at(0.238, 0.004, 0.014) // the ring the can actually stands on
-    .at(0.262, 0.028, 0.012)
-    .at(R, 0.086, 0.05) // out to full diameter
-    .at(R, 1.212, 0.04) // the straight body
-    .at(0.262, 1.335, 0.28) // shoulder
-    .at(0.198, 1.44, 0.09) // neck
-    .at(0.1925, 1.468, 0.006)
-    .at(0.1975, 1.4855, 0.007) // rolled rim, outer bulge
-    .at(0.1885, RIM_TOP_Y, 0.006) // crown of the rim
-    .at(RIM_INNER_R, 1.4885, 0.005)
+    .at(0, 0.082) // centre of the concave base dome
+    .at(0.104, 0.075, 0.06)
+    .at(0.204, 0.024, 0.04)
+    .at(0.248, 0.002, 0.009) // the thin ring the can actually stands on
+    .at(0.268, 0.016, 0.008)
+    .at(R, 0.044, 0.024) // out to full diameter, and fast: the base is a
+    .at(R, 1.368, 0.018) //   narrow bright ring, not a thick dark foot
+    .at(0.276, 1.412, 0.042) // shoulder — one short, smooth sweep
+    .at(NECK_R, 1.451, 0.024) // neck
+    .at(NECK_R, 1.4715, 0.005)
+    .at(0.2615, 1.484, 0.006) // rolled rim, outer bulge
+    .at(0.2525, RIM_TOP_Y, 0.005) // crown of the rim
+    .at(RIM_INNER_R, 1.489, 0.005)
     .at(RIM_INNER_R, LID_Y)
-    .build();
+    // 16 steps, not 7. At a 4 mm fillet radius seven segments are visible as
+    // hard horizontal facets around the shoulder — the "grooves".
+    .build(16);
 }
 
 function lidProfile() {
   // Ordered outer to centre so the lathe normals face up.
   return new Profile()
     .at(RIM_INNER_R, LID_Y)
-    .at(0.152, 1.4685, 0.02)
-    .at(0.08, 1.4655, 0.14)
-    .at(0, 1.4645)
+    .at(0.205, 1.4735, 0.024)
+    .at(0.105, 1.4705, 0.17)
+    .at(0, 1.4695)
     .build(5);
 }
 
@@ -179,27 +186,27 @@ function tabGeometry() {
   // Laid out in the tab's own plane, in the same units as the can: a narrow
   // nose over the rivet widening to a rounded tail you can get a finger under.
   const shape = new THREE.Shape();
-  const noseX = -0.068;
-  const noseW = 0.03;
-  const tailX = 0.095;
-  const tailW = 0.052;
+  const noseX = -0.086;
+  const noseW = 0.037;
+  const tailX = 0.12;
+  const tailW = 0.066;
 
-  shape.moveTo(-0.04, -noseW);
+  shape.moveTo(-0.05, -noseW);
   shape.quadraticCurveTo(noseX, -noseW, noseX, 0);
-  shape.quadraticCurveTo(noseX, noseW, -0.04, noseW);
-  shape.lineTo(0.055, tailW);
+  shape.quadraticCurveTo(noseX, noseW, -0.05, noseW);
+  shape.lineTo(0.07, tailW);
   shape.quadraticCurveTo(tailX, tailW, tailX, 0);
-  shape.quadraticCurveTo(tailX, -tailW, 0.055, -tailW);
+  shape.quadraticCurveTo(tailX, -tailW, 0.07, -tailW);
   shape.closePath();
 
-  shape.holes.push(ring(0.04, 0, 0.036, 0.026, 30)); // finger hole
-  shape.holes.push(ring(-0.04, 0, 0.011, 0.011, 16)); // rivet hole
+  shape.holes.push(ring(0.051, 0, 0.046, 0.033, 30)); // finger hole
+  shape.holes.push(ring(-0.051, 0, 0.014, 0.014, 16)); // rivet hole
 
   const g = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.006,
+    depth: 0.007,
     bevelEnabled: true,
-    bevelThickness: 0.0025,
-    bevelSize: 0.0025,
+    bevelThickness: 0.003,
+    bevelSize: 0.003,
     bevelSegments: 2,
     curveSegments: 20,
   });
@@ -224,7 +231,7 @@ export function buildCanGeometries({ segments = 160, tab = true } = {}) {
   return { body, lid, tab: tab ? tabGeometry() : null };
 }
 
-export const TAB_OFFSET = { y: LID_Y + 0.0075, z: -0.012 };
+export const TAB_OFFSET = { y: LID_Y + 0.008, z: -0.015 };
 
 /**
  * Build the can. `maps` carries the canvases from artwork.js; the caller owns
@@ -279,7 +286,7 @@ export function createCan({ segments = 160, maps, geometries = null }) {
     envMapIntensity: 1.3,
   });
   const tab = new THREE.Mesh(geo.tab || tabGeometry(), tabMat);
-  tab.position.set(0, LID_Y + 0.0075, -0.012);
+  tab.position.set(0, LID_Y + 0.008, -0.015);
   tab.rotation.y = Math.PI * 0.5;
   group.add(tab);
 
