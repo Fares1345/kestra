@@ -123,11 +123,19 @@ function bodyProfile() {
 function lidProfile() {
   // Ordered outer to centre so the lathe normals face up.
   return new Profile()
+    // A real beverage end is not a dish. Coming in from the curl the wall
+    // drops into the countersink — a narrow groove that is the lowest ring on
+    // the lid and the thing that catches a hard line of light on every can
+    // you have ever picked up — and only then does the centre panel rise back
+    // up, very slightly domed, sitting a couple of millimetres below the curl
+    // so the cans stack.
     .at(RIM_INNER_R, LID_Y)
-    .at(0.202, 1.6025, 0.024)
-    .at(0.104, 1.5995, 0.17)
-    .at(0, 1.5985)
-    .build(5);
+    .at(0.212, 1.5975, 0.010) // down the countersink wall
+    .at(0.196, 1.5945, 0.008) // the countersink floor
+    .at(0.180, 1.6005, 0.010) // back up to the panel
+    .at(0.095, 1.6045, 0.16) // the panel, gently domed
+    .at(0, 1.6055)
+    .build(9);
 }
 
 /* ------------------------------------------------------------------ *
@@ -190,21 +198,21 @@ function tabGeometry() {
   // Laid out in the tab's own plane, in the same units as the can: a narrow
   // nose over the rivet widening to a rounded tail you can get a finger under.
   const shape = new THREE.Shape();
-  const noseX = -0.086;
-  const noseW = 0.037;
-  const tailX = 0.12;
-  const tailW = 0.066;
+  const noseX = -0.0912;
+  const noseW = 0.0392;
+  const tailX = 0.1272;
+  const tailW = 0.070;
 
-  shape.moveTo(-0.05, -noseW);
+  shape.moveTo(-0.053, -noseW);
   shape.quadraticCurveTo(noseX, -noseW, noseX, 0);
-  shape.quadraticCurveTo(noseX, noseW, -0.05, noseW);
-  shape.lineTo(0.07, tailW);
+  shape.quadraticCurveTo(noseX, noseW, -0.053, noseW);
+  shape.lineTo(0.0742, tailW);
   shape.quadraticCurveTo(tailX, tailW, tailX, 0);
-  shape.quadraticCurveTo(tailX, -tailW, 0.07, -tailW);
+  shape.quadraticCurveTo(tailX, -tailW, 0.0742, -tailW);
   shape.closePath();
 
-  shape.holes.push(ring(0.051, 0, 0.046, 0.033, 30)); // finger hole
-  shape.holes.push(ring(-0.051, 0, 0.014, 0.014, 16)); // rivet hole
+  shape.holes.push(ring(0.0541, 0, 0.0488, 0.035, 30)); // finger hole
+  shape.holes.push(ring(-0.0541, 0, 0.0148, 0.0148, 16)); // rivet hole
 
   const g = new THREE.ExtrudeGeometry(shape, {
     depth: 0.007,
@@ -235,7 +243,10 @@ export function buildCanGeometries({ segments = 160, tab = true } = {}) {
   return { body, lid, tab: tab ? tabGeometry() : null };
 }
 
-export const TAB_OFFSET = { y: LID_Y + 0.008, z: -0.015 };
+// A real end is riveted dead centre, and the tab hangs off that point: nose
+// toward the score, finger lift the other way. Placing the tab by its middle
+// instead put the rivet off-centre and swung the nose to the wrong side.
+export const TAB_OFFSET = { y: LID_Y + 0.008, z: -0.0541 };
 
 /**
  * Build the can. `maps` carries the canvases from artwork.js; the caller owns
@@ -274,6 +285,8 @@ export function createCan({ segments = 160, maps, geometries = null }) {
   const lidMat = new THREE.MeshPhysicalMaterial({
     map: maps.lidColour,
     roughnessMap: maps.lidRoughness,
+    normalMap: maps.lidNormal,
+    normalScale: new THREE.Vector2(1.1, 1.1),
     metalness: 1,
     roughness: 1,
     // A can lid is stamped, not polished; at hero intensity it mirrors the key
@@ -290,7 +303,7 @@ export function createCan({ segments = 160, maps, geometries = null }) {
     envMapIntensity: 1.3,
   });
   const tab = new THREE.Mesh(geo.tab || tabGeometry(), tabMat);
-  tab.position.set(0, LID_Y + 0.008, -0.015);
+  tab.position.set(0, TAB_OFFSET.y, TAB_OFFSET.z);
   tab.rotation.y = Math.PI * 0.5;
   group.add(tab);
 

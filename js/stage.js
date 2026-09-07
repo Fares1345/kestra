@@ -384,6 +384,7 @@ export function createStage(canvas, { quality, product, products }) {
     normal: wrapTexture(surfaceSheets.normal),
     lidColour: wrapTexture(lidSheets.colour, { srgb: true, repeat: false }),
     lidRoughness: wrapTexture(lidSheets.roughness, { repeat: false }),
+    lidNormal: wrapTexture(lidSheets.normal, { repeat: false }),
   };
 
   /** Colour sheets are the only per-flavour cost. Painted once, kept. */
@@ -399,6 +400,7 @@ export function createStage(canvas, { quality, product, products }) {
     normal: shared.normal,
     lidColour: shared.lidColour,
     lidRoughness: shared.lidRoughness,
+    lidNormal: shared.lidNormal,
   };
 
   /* ---------- geometry, shared between the hero can and the pack ---------- */
@@ -547,6 +549,7 @@ export function createStage(canvas, { quality, product, products }) {
       lid: new THREE.MeshPhysicalMaterial({
         map: shared.lidColour,
         roughnessMap: shared.lidRoughness,
+        normalMap: shared.lidNormal,
         metalness: 1,
         roughness: 1,
         // Twelve lids side by side blow out at hero intensity.

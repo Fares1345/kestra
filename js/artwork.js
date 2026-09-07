@@ -797,6 +797,39 @@ export function paintSurfaceSheets({ droplets = true, beadCount = 620 } = {}) {
  * the lid
  * ------------------------------------------------------------------ */
 
+/**
+ * The teardrop the opening is scored into. Wide lobe away from the rivet,
+ * tapering back toward it — this is the shape on every stay-on-tab end.
+ */
+function scorePath(ctx, rx, ry) {
+  ctx.beginPath();
+  ctx.moveTo(0, ry); // the point, nearest the rivet — the tear starts here
+  ctx.bezierCurveTo(rx * 0.62, ry * 0.74, rx, ry * 0.02, rx * 0.86, -ry * 0.54);
+  ctx.bezierCurveTo(rx * 0.74, -ry * 1.04, -rx * 0.74, -ry * 1.04, -rx * 0.86, -ry * 0.54);
+  ctx.bezierCurveTo(-rx, ry * 0.02, -rx * 0.62, ry * 0.74, 0, ry);
+  ctx.closePath();
+}
+
+/** Height field -> tangent-space normals, by central difference. */
+function heightToNormal(height, size, strength) {
+  const src = height.getImageData(0, 0, size, size).data;
+  const out = new ImageData(size, size);
+  const at = (x, y) => src[((y & (size - 1)) * size + (x & (size - 1))) * 4] / 255;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = (at(x + 1, y) - at(x - 1, y)) * strength;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+      const len = Math.hypot(dx, dy, 1);
+      const i = (y * size + x) * 4;
+      out.data[i] = ((-dx / len) * 0.5 + 0.5) * 255;
+      out.data[i + 1] = ((-dy / len) * 0.5 + 0.5) * 255;
+      out.data[i + 2] = (1 / len) * 0.5 * 255 + 127.5;
+      out.data[i + 3] = 255;
+    }
+  }
+  return out;
+}
+
 export function paintLidSheets() {
   const S = 1024;
   const col = surface(S, S);
@@ -825,24 +858,25 @@ export function paintLidSheets() {
   c.arc(mid, mid, mid * 0.9, 0, Math.PI * 2);
   c.stroke();
 
-  // Score line for the opening.
+  // The score line. A stay-on-tab end is scored as a teardrop, not an oval:
+  // wide at the far lobe where the panel folds in, tapering back toward the
+  // rivet so the tear starts at one point and runs.
   c.save();
-  c.translate(mid, mid + S * 0.12);
-  c.strokeStyle = 'rgba(58,64,72,0.85)';
-  c.lineWidth = 4;
-  c.beginPath();
-  c.ellipse(0, 0, S * 0.155, S * 0.115, 0, 0, Math.PI * 2);
+  c.translate(mid, mid - S * 0.2155);
+  scorePath(c, S * 0.16, S * 0.125);
+  c.strokeStyle = 'rgba(46,52,60,0.95)';
+  c.lineWidth = 5.5;
   c.stroke();
-  c.strokeStyle = 'rgba(255,255,255,0.4)';
-  c.lineWidth = 2;
-  c.beginPath();
-  c.ellipse(0, -2, S * 0.155, S * 0.115, 0, 0, Math.PI * 2);
+  scorePath(c, S * 0.16, S * 0.125);
+  c.translate(0, 2.5);
+  c.strokeStyle = 'rgba(255,255,255,0.34)';
+  c.lineWidth = 1.8;
   c.stroke();
   c.restore();
 
   // Rivet.
   c.save();
-  c.translate(mid, mid - S * 0.03);
+  c.translate(mid, mid);
   const rv = c.createRadialGradient(-4, -6, 1, 0, 0, 26);
   rv.addColorStop(0, '#EFF2F5');
   rv.addColorStop(0.6, '#9BA1A8');
@@ -854,7 +888,7 @@ export function paintLidSheets() {
   c.restore();
 
   // Embossed mark and lot code, the way a real lid is stamped.
-  drawMark(c, mid, mid - S * 0.3, 46, 'rgba(96,102,110,0.5)');
+  drawMark(c, mid + S * 0.3, mid, 42, 'rgba(96,102,110,0.45)');
   c.save();
   c.fillStyle = 'rgba(90,96,104,0.5)';
   setFont(c, { weight: 600, size: 20, family: 'Inter Variable' });
@@ -876,7 +910,51 @@ export function paintLidSheets() {
   }
   r.restore();
 
-  return { colour: col.canvas, roughness: rgh.canvas };
+  /* ---- relief ---- */
+  // Paint a height field, then differentiate it. The lathe gives the
+  // countersink and the panel dome, but the score and the rivet are not
+  // radial, so they can only come from a map.
+  const hgt = surface(S, S);
+  const h = hgt.ctx;
+  h.fillStyle = '#808080';
+  h.fillRect(0, 0, S, S);
+
+  // The score is a groove: a dark line with a faint raised shoulder either
+  // side, which is what the stamping actually leaves.
+  h.save();
+  h.translate(mid, mid - S * 0.2155);
+  h.lineJoin = 'round';
+  scorePath(h, S * 0.16, S * 0.125);
+  h.strokeStyle = 'rgba(168,168,168,0.85)';
+  h.lineWidth = 11;
+  h.stroke();
+  scorePath(h, S * 0.16, S * 0.125);
+  h.strokeStyle = '#3c3c3c';
+  h.lineWidth = 6;
+  h.stroke();
+  h.restore();
+
+  // The rivet: a real dome, with the little collar pressed around its base.
+  h.save();
+  h.translate(mid, mid);
+  h.fillStyle = 'rgba(120,120,120,0.9)';
+  h.beginPath();
+  h.arc(0, 0, 34, 0, Math.PI * 2);
+  h.fill();
+  const dome = h.createRadialGradient(0, 0, 1, 0, 0, 24);
+  dome.addColorStop(0, '#e8e8e8');
+  dome.addColorStop(0.72, '#b4b4b4');
+  dome.addColorStop(1, '#8a8a8a');
+  h.fillStyle = dome;
+  h.beginPath();
+  h.arc(0, 0, 24, 0, Math.PI * 2);
+  h.fill();
+  h.restore();
+
+  const nrm = surface(S, S);
+  nrm.ctx.putImageData(heightToNormal(h, S, 5.5), 0, 0);
+
+  return { colour: col.canvas, roughness: rgh.canvas, normal: nrm.canvas };
 }
 
 /* ------------------------------------------------------------------ *

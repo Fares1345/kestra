@@ -192,15 +192,57 @@ export function createMixingScene({ materials, accent }) {
   inlet.add(down);
   group.add(inlet);
 
-  const pourMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(accent).lerp(new THREE.Color('#ffffff'), 0.16),
+  // The stream. An unlit flat cylinder is what makes a pour read as cartoon:
+  // liquid is legible almost entirely through its specular streaks, so this
+  // takes light and the environment, and carries a normal map scrolling down
+  // its length for surface texture.
+  const pourNormal = materials.liquidNormal.clone();
+  pourNormal.wrapS = pourNormal.wrapT = THREE.RepeatWrapping;
+  pourNormal.repeat.set(2, 7);
+  // A thin falling column carries far less pigment than the bulk it comes
+  // from, so it reads pale and half-transparent — not a solid rod of juice.
+  const pourTint = (hex) => new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), 0.42);
+  const pourMat = new THREE.MeshPhysicalMaterial({
+    color: pourTint(accent),
+    roughness: 0.04,
+    metalness: 0,
+    clearcoat: 1,
+    clearcoatRoughness: 0.05,
+    normalMap: pourNormal,
+    normalScale: new THREE.Vector2(0.5, 1.4),
+    envMapIntensity: 2.1,
     transparent: true,
     opacity: 0,
     depthWrite: false,
+    side: THREE.DoubleSide,
   });
-  const pour = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.1, 1, 16, 1, true), pourMat);
+  // A falling stream accelerates, so it necks as it goes: same flow, less
+  // cross-section. A straight tube is the other half of the cartoon look.
+  const pourProfile = [];
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12;
+    pourProfile.push(new THREE.Vector2(0.118 * (0.42 + t * 0.58) + Math.sin(t * 7) * 0.005, t));
+  }
+  const pour = new THREE.Mesh(new THREE.LatheGeometry(pourProfile, 20), pourMat);
   pour.position.set(-R * 0.42, DEPTH * 0.6, 0);
   group.add(pour);
+
+  // Where it lands: a crown of ripples running out across the surface.
+  const rippleMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(accent).lerp(new THREE.Color('#ffffff'), 0.55),
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const ripples = [];
+  for (let i = 0; i < 3; i++) {
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.86, 1, 40), rippleMat.clone());
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(-R * 0.42, 0, 0);
+    group.add(ring);
+    ripples.push(ring);
+  }
 
   // Vapour lifting off a cold surface.
   const vapourCount = 220;
@@ -288,18 +330,32 @@ export function createMixingScene({ materials, accent }) {
 
       // The pour runs while the level is climbing and shuts off once it settles.
       const pouring = range(progress, 0.02, 0.14) * (1 - range(progress, 0.62, 0.78));
-      pourMat.opacity = pouring * 0.72;
+      pourMat.opacity = pouring * 0.58;
       pour.visible = pouring > 0.01;
       const drop = DEPTH + 0.72 - level;
       pour.scale.y = drop;
-      pour.position.y = level + drop / 2;
+      pour.position.y = level;
+      // The surface texture runs down the stream far faster than the stream
+      // itself moves, which is what sells it as falling rather than hanging.
+      pourNormal.offset.y = -clock * 3.2;
+      pour.rotation.y = Math.sin(clock * 0.7) * 0.05;
+
+      ripples.forEach((ring, i) => {
+        const life = ((clock * 0.9 + i / ripples.length) % 1);
+        const rad = 0.06 + life * 0.5;
+        ring.scale.setScalar(rad);
+        ring.position.y = level + 0.004;
+        ring.material.opacity = pouring * (1 - life) * (1 - life) * 0.85;
+        ring.visible = ring.material.opacity > 0.01;
+      });
 
       bounce.position.y = level + 0.15;
       bounce.intensity = 2 + range(progress, 0.1, 0.8) * 5;
     },
     setAccent(hex) {
       liquidMat.color.set(hex).multiplyScalar(0.4);
-      pourMat.color.set(hex).lerp(new THREE.Color('#ffffff'), 0.3);
+      pourMat.color.copy(pourTint(hex));
+      ripples.forEach((r) => r.material.color.set(hex).lerp(new THREE.Color('#ffffff'), 0.55));
       bounce.color.set(hex);
     },
   };
