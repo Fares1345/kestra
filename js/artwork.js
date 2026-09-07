@@ -20,8 +20,14 @@ const BODY_H = 1024;
 // under the shoulder and stops just above the base flare, the way a real can
 // is decorated. These are texture rows, mapped by remapBodyUVs onto real
 // height, so they move whenever the profile does.
+// The ink runs to the rolled rim. On a real can the shoulder and neck are
+// printed like the rest of the body and only the narrow curl stays bare — a
+// wide exposed silver shoulder is a mock-up tell, not a can. Rows 16..84 of
+// this sheet land exactly on the shoulder and neck; the face layout below
+// still starts at PRINT_TOP, so the design itself is untouched.
+const SHOULDER_TOP = 16;
 const PRINT_TOP = 84;
-const PRINT_BOTTOM = 957;
+const PRINT_BOTTOM = 978;
 const PRINT_H = PRINT_BOTTOM - PRINT_TOP;
 
 const PAPER = '#F6F3EE'; // off-white ink; pure white never looks printed
@@ -613,6 +619,25 @@ function paintSeamPanel(ctx, cx, product, rng) {
  * ------------------------------------------------------------------ */
 
 /** The printed sleeve for one flavour — the only sheet that differs per SKU. */
+/** The printed shoulder: the dark collar every can carries above the body. */
+function paintShoulderBand(ctx, product) {
+  const h = PRINT_TOP - SHOULDER_TOP;
+  ctx.save();
+  ctx.fillStyle = '#14161a';
+  ctx.fillRect(0, SHOULDER_TOP, BODY_W, h);
+  ctx.fillStyle = product.accent;
+  ctx.fillRect(0, PRINT_TOP - 3, BODY_W, 3);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  setFont(ctx, { weight: 700, size: 21, family: 'Archivo Variable', stretch: '86%' });
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const y = SHOULDER_TOP + h * 0.5;
+  for (const cx of [BODY_W * 0.25, BODY_W * 0.75]) {
+    tracked(ctx, 'SPARKLING ENERGY DRINK', cx, y, 7);
+  }
+  ctx.restore();
+}
+
 export function paintColourSheet(product) {
   const rng = seeded(seedFrom(product.id));
   const { canvas, ctx: c } = surface(BODY_W, BODY_H);
@@ -634,6 +659,7 @@ export function paintColourSheet(product) {
   paintFace(c, BODY_W * 0.75, product, BODY_W * 0.42, bg);
   paintSeamPanel(c, BODY_W * 0.5, product, rng);
   paintSeamPanel(c, BODY_W - 2, product, seeded(seedFrom(product.id + 'b')));
+  paintShoulderBand(c, product);
 
   // Print grain.
   c.save();
@@ -665,7 +691,7 @@ export function paintSurfaceSheets({ droplets = true, beadCount = 620 } = {}) {
   // all, which is why the colour washed to white under a strip light instead
   // of holding. The unprinted bands above and below stay fully metallic.
   r.fillStyle = 'rgb(255,84,26)';
-  r.fillRect(0, PRINT_TOP, BODY_W, PRINT_H);
+  r.fillRect(0, SHOULDER_TOP, BODY_W, PRINT_BOTTOM - SHOULDER_TOP);
 
   // Mill lines on the bare metal. These are confined to the two unprinted
   // bands, and those bands are now narrow — 900 of them packed into ~90 rows
@@ -673,7 +699,7 @@ export function paintSurfaceSheets({ droplets = true, beadCount = 620 } = {}) {
   r.save();
   r.globalAlpha = 0.16;
   for (let i = 0; i < 190; i++) {
-    const y = rng() < 0.5 ? rng() * PRINT_TOP : PRINT_BOTTOM + rng() * (BODY_H - PRINT_BOTTOM);
+    const y = rng() < 0.5 ? rng() * SHOULDER_TOP : PRINT_BOTTOM + rng() * (BODY_H - PRINT_BOTTOM);
     const x = rng() * BODY_W;
     r.fillStyle = rng() > 0.5 ? 'rgb(255,70,255)' : 'rgb(255,52,255)';
     r.fillRect(x, y, 40 + rng() * 220, 1);
