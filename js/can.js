@@ -226,10 +226,13 @@ function tabGeometry() {
   const shape = new THREE.Shape();
   // Narrow at the nose, widening to a broad rounded lift end — the stadium
   // silhouette of a stay-on tab, not a ring with a hole punched through it.
-  const noseX = -0.098;
-  const noseW = 0.029;
+  // The nose runs past the rivet and out over the score, which is what levers
+  // it open; a tab that stops at its own rivet cannot work and does not look
+  // like it could.
+  const noseX = -0.116;
+  const noseW = 0.026;
   const tailX = 0.130;
-  const tailW = 0.064;
+  const tailW = 0.058;
 
   shape.moveTo(-0.060, -noseW);
   shape.quadraticCurveTo(noseX, -noseW, noseX, 0);
@@ -249,9 +252,15 @@ function tabGeometry() {
     bevelThickness: 0.003,
     bevelSize: 0.003,
     bevelSegments: 2,
-    curveSegments: 20,
+    curveSegments: 24,
   });
   g.rotateX(-Math.PI / 2);
+
+  // Press the blank. A tab is flat only before it is stamped: the lift pad is
+  // raised so a fingernail can get under it, and the collar round the rivet is
+  // sunk where the metal was drawn through. Displacing the whole column, top
+  // face and bottom together, is what stamping actually does to sheet — and a
+  // perfectly flat tab is the loudest toy tell left on the lid.
   g.computeVertexNormals();
   return g;
 }
@@ -340,6 +349,16 @@ export function createCan({ segments = 160, maps, geometries = null }) {
   tab.position.set(0, TAB_OFFSET.y, TAB_OFFSET.z);
   tab.rotation.y = Math.PI * 0.5;
   group.add(tab);
+
+  // The lift pad, as its own piece riding on the tab. Displacing the extruded
+  // cap to raise it does not work: that cap has no interior vertices, only the
+  // outline and the slot rim, so every attempt collapses into a faceted tent.
+  // A separate plate sits proud of the plane cleanly, which is what the press
+  // makes anyway — and a dead flat tab is the last toy tell on the lid.
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 44), tabMat);
+  pad.scale.set(0.0435, 0.0075, 0.0335);
+  pad.position.set(0.070, 0.0095, 0);
+  tab.add(pad);
 
   // Sit the can on the origin so callers can place it on a floor.
   group.userData = { radius: R, height: H, materials: { body: bodyMat, lid: lidMat, tab: tabMat } };
