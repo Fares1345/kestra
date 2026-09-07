@@ -436,7 +436,7 @@ export function createStage(canvas, { quality, product, products }) {
     // the scene changed neither. Clearcoat was not the cause either. At 0.09
     // the blood orange holds its colour across the curve and the metal keeps a
     // reflection; lower than that and the can goes flat.
-    dress(m.body, 0.09);
+    dress(m.body, 0.05);
     dress(m.lid, 0.2);
     dress(m.tab, 0.5);
     if (reflection) dress(reflection.material, 0.07);
@@ -573,8 +573,26 @@ export function createStage(canvas, { quality, product, products }) {
     canPivot.add(reflection);
   }
 
-  /* ---------- lights ---------- */
-  const key = new THREE.DirectionalLight(0xfff4ea, 2.4);
+  /* ---------- lights ----------
+   *
+   * A cylinder only reads as a solid object if it has a light side and a dark
+   * side. This rig used to light it from everywhere at once — a broad captured
+   * studio on the material, a hemisphere at 0.55, and two rims strong enough to
+   * fill whatever the key left in shadow — so the can came out evenly bright
+   * from edge to edge with no falloff anywhere. Flat, and flat is what reads as
+   * rendered rather than photographed.
+   *
+   * And both rims were saturated: rimWarm was the product accent at full
+   * strength, which is a 100%-saturation orange for Solstice. Lighting an
+   * orange can with an orange lamp pushes the ink past its own colour, which
+   * is what made the print look garish no matter what the print colour was.
+   *
+   * So: the key models the form, the fill is cut back far enough to let the
+   * far side actually go dark, and the rims stay for their sweep but come in
+   * pale and much weaker. They still carry a hint of the flavour — enough to
+   * tell the cans apart — without dyeing the label.
+   */
+  const key = new THREE.DirectionalLight(0xfff4ea, 2.8);
   key.position.set(-2.4, 4.4, 3.2);
   if (renderer.shadowMap.enabled) {
     key.castShadow = true;
@@ -596,15 +614,21 @@ export function createStage(canvas, { quality, product, products }) {
   scene.add(key);
   scene.add(key.target);
 
-  const rimWarm = new THREE.DirectionalLight(new THREE.Color(product.accent), 2.1);
+  // Mostly white, with the flavour left in as a tint rather than a dye.
+  const RIM_WARM_BASE = 0.9;
+  const RIM_COOL_BASE = 2;
+  const rimTint = new THREE.Color(product.accent).lerp(new THREE.Color(0xffffff), 0.72);
+  const rimWarm = new THREE.DirectionalLight(rimTint, RIM_WARM_BASE);
   rimWarm.position.set(2.6, 2.2, -3.4);
   scene.add(rimWarm);
 
-  const rimCool = new THREE.PointLight(0x5b7dff, 5, 4.5, 2);
+  const rimCool = new THREE.PointLight(0xc2d0ee, RIM_COOL_BASE, 4.5, 2);
   rimCool.position.set(-1.1, 1.5, -1.1);
   scene.add(rimCool);
 
-  scene.add(new THREE.HemisphereLight(0x2a3040, 0x05060a, 0.55));
+  // Ambient fill only, and only just enough to keep the shadow side from
+  // going to black. Any more and the falloff the key creates is erased.
+  scene.add(new THREE.HemisphereLight(0x2a3040, 0x05060a, 0.1));
 
   /* ---------- particles ---------- */
   const dustSprite = new THREE.CanvasTexture(makeGlowSprite());
@@ -970,8 +994,8 @@ export function createStage(canvas, { quality, product, products }) {
       bokehPass.uniforms.aperture.value = aperture;
     },
     setAccentPower(v) {
-      rimWarm.intensity = 2.1 * v;
-      rimCool.intensity = 5 * v;
+      rimWarm.intensity = RIM_WARM_BASE * v;
+      rimCool.intensity = RIM_COOL_BASE * v;
     },
     /**
      * Travel the accent light around the can. A highlight that moves across a
