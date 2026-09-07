@@ -62,7 +62,7 @@ export function detectQuality() {
   return {
     tier: low ? 'low' : 'high',
     segments: low ? 96 : 176,
-    packSegments: low ? 40 : 72,
+    packSegments: low ? 28 : 72,
     dust: low ? 240 : 680,
     bloom: !low,
     dof: !low,
@@ -356,6 +356,13 @@ export function createStage(canvas, { quality, product, products }) {
     powerPreference: 'high-performance',
   });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality.maxPixelRatio));
+
+  // Both flags feed targetPixelRatio(), which buildComposer() calls while the
+  // stage is still being constructed, so they have to be initialised here
+  // rather than beside the code that flips them.
+  let degraded = false;
+  let packScaled = false;
+
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1;
@@ -606,7 +613,7 @@ export function createStage(canvas, { quality, product, products }) {
 
   function buildComposer() {
     composer = new EffectComposer(renderer);
-    composer.setPixelRatio(Math.min(devicePixelRatio || 1, quality.maxPixelRatio));
+    composer.setPixelRatio(targetPixelRatio());
     composer.setSize(innerWidth, innerHeight);
     composer.addPass(new RenderPass(scene, camera));
     if (quality.dof) {
@@ -630,27 +637,39 @@ export function createStage(canvas, { quality, product, products }) {
     const key = id || '__empty';
     if (packMaterials.has(key)) return packMaterials.get(key);
     const p = products.find((x) => x.id === id) || product;
+    // The tray is twelve cans, so twenty-four draws of whatever this is. On a
+    // phone that is the single heaviest thing on the page: clearcoat roughly
+    // doubles the fragment cost of a physical material, and at this size on
+    // this screen neither it nor the surface normals are visible. Phones get
+    // a standard material without either; the hero can is untouched.
+    const cheap = quality.tier === 'low';
+    const Mat = cheap ? THREE.MeshStandardMaterial : THREE.MeshPhysicalMaterial;
+    const gloss = cheap ? {} : { clearcoat: 0.5, clearcoatRoughness: 0.24 };
+    const bump = cheap
+      ? {}
+      : { normalMap: shared.normal, normalScale: new THREE.Vector2(0.4, 0.4) };
     const mats = {
-      body: new THREE.MeshPhysicalMaterial({
+      body: new Mat({
         map: colourFor(p),
         roughnessMap: shared.orm,
         metalnessMap: shared.orm,
-        normalMap: shared.normal,
-        normalScale: new THREE.Vector2(0.4, 0.4),
         metalness: 1,
         roughness: 1,
-        clearcoat: 0.5,
-        clearcoatRoughness: 0.24,
         envMapIntensity: 1.3,
+        ...bump,
+        ...gloss,
       }),
-      lid: new THREE.MeshPhysicalMaterial({
+      lid: new Mat({
         map: shared.lidColour,
         roughnessMap: shared.lidRoughness,
-        normalMap: shared.lidNormal,
+        // The end is lacquered, so metalness comes from the map like it does
+        // on the hero can — without this the pack lids are bare black metal.
+        metalnessMap: shared.lidRoughness,
         metalness: 1,
         roughness: 1,
         // Twelve lids side by side blow out at hero intensity.
         envMapIntensity: 0.55,
+        ...(cheap ? {} : { normalMap: shared.lidNormal, clearcoat: 1, clearcoatRoughness: 0.05 }),
       }),
     };
     packMaterials.set(key, mats);
@@ -760,14 +779,13 @@ export function createStage(canvas, { quality, product, products }) {
   // rather than letting the whole page stutter.
   let sceneProgress = 0;
   let slowFrames = 0;
-  let degraded = false;
 
   function resize() {
     const w = innerWidth;
     const h = innerHeight;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality.maxPixelRatio));
+    renderer.setPixelRatio(targetPixelRatio());
     renderer.setSize(w, h, false);
     composer?.setSize(w, h);
     bloomPass?.setSize(w, h);
@@ -780,12 +798,34 @@ export function createStage(canvas, { quality, product, products }) {
     else renderer.render(scene, camera);
   }
 
+  // Twelve cans cost roughly three times what the single hero can does, and on
+  // a phone that is where the page stops being smooth. Rather than degrade the
+  // whole site for it, the buffer drops to 1x while the tray is on screen and
+  // goes back afterwards — at 1.4 on a dense screen that is about half the
+  // fragments, and on a tray this size it is not a difference you can see.
+  /**
+   * One place decides the buffer scale. resize() used to recompute it from
+   * quality.maxPixelRatio unconditionally, which silently undid everything
+   * that tried to lower it — including the adaptive guard, whose resolution
+   * shedding therefore never took effect at all.
+   */
+  function targetPixelRatio() {
+    const cap = degraded ? 1.25 : quality.maxPixelRatio;
+    const base = Math.min(devicePixelRatio || 1, cap);
+    return packScaled ? Math.min(base, 1) : base;
+  }
+
+  function scaleForPack(on) {
+    if (quality.tier !== 'low' || packScaled === on) return;
+    packScaled = on;
+    resize();
+  }
+
   function degrade() {
     if (degraded) return;
     degraded = true;
     bloomEnabled = false;
     if (bokehPass) bokehPass.enabled = false;
-    renderer.setPixelRatio(Math.min(1.25, renderer.getPixelRatio()));
     dust.material.uniforms.uOpacity.value *= 0.5;
     resize();
   }
@@ -929,6 +969,7 @@ export function createStage(canvas, { quality, product, products }) {
     setPackBlend(v) {
       packBlend = Math.max(0, Math.min(1, v));
       if (packBlend > 0.001) ensurePack();
+      scaleForPack(packBlend > 0.25);
       applyBlend();
     },
     get packGroup() {
