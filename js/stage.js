@@ -427,7 +427,16 @@ export function createStage(canvas, { quality, product, products }) {
     // materials were balanced against, so it comes in low: enough for the
     // metal to have something real in its reflection, not enough to wash the
     // print out. The bare-metal tab can take much more than the printed body.
-    dress(m.body, 0.16);
+    //
+    // 0.16 was still too much for the body. Measured on a frozen hero frame,
+    // the environment was supplying most of the light on the printed panel and
+    // laying a white specular wash across the lit side with it: killing the
+    // env map alone doubled the print's saturation (0.42 -> 0.83) and cut the
+    // washed-out area from 14.3% to 5.4%, while killing every direct light in
+    // the scene changed neither. Clearcoat was not the cause either. At 0.09
+    // the blood orange holds its colour across the curve and the metal keeps a
+    // reflection; lower than that and the can goes flat.
+    dress(m.body, 0.09);
     dress(m.lid, 0.2);
     dress(m.tab, 0.5);
     if (reflection) dress(reflection.material, 0.07);
