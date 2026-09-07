@@ -920,6 +920,22 @@ body.no-webgl .hero::after {
   margin-bottom: 26px;
 }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* At 390px the four English filters need 379px and the shell gives 350, so
+   "New" dropped onto a row of its own. Below that width the row becomes a
+   scroller instead: one line, all four reachable, no orphan. Arabic already
+   fits and is unaffected either way. */
+@media (max-width: 460px) {
+  .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* so a chip never ends up half-cut against the edge when scrolled */
+    scroll-snap-type: x proximity;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters button { flex: none; scroll-snap-align: start; }
+}
 .shop__count {
   font-size: 12px;
   letter-spacing: 0.16em;
@@ -1127,7 +1143,10 @@ body.no-webgl .hero::after {
   background: var(--accent);
   transition: width 420ms var(--ease), background 500ms var(--ease);
 }
-.mix__count { margin: 0; font-size: 13px; color: var(--text-3); }
+/* This line sits over the live tray render on narrow screens, where the cans
+   are directly behind it. A shadow rather than a scrim: the last attempt here
+   used a bleeding pseudo-element and broke the RTL column. */
+.mix__count { margin: 0; font-size: 13px; color: var(--text-3); text-shadow: 0 1px 12px var(--bg), 0 0 4px var(--bg); }
 .mix__count b { color: var(--text); font-variant-numeric: tabular-nums; }
 .mix__actions { display: grid; gap: 10px; }
 .mix__minor { display: flex; gap: 8px; }
@@ -1416,7 +1435,9 @@ body.no-webgl .hero::after {
 /* ------------------------------- faq --------------------------------- */
 
 .faq-shell { max-width: 900px; }
-.faq { border-top: 1px solid var(--line); }
+/* The list carries no rule of its own along its top: the section head above
+   already ends in one, and the two sat 44px apart with nothing between them,
+   which read as an empty row rather than as a divider. */
 .faq__item { border-bottom: 1px solid var(--line); }
 .faq__item h3 { margin: 0; font-size: inherit; font-weight: inherit; }
 .faq__q {
@@ -2034,6 +2055,18 @@ body.no-webgl .hero::after {
   .footer__inner { grid-template-columns: 1fr; }
   .signup__form { flex-direction: column; }
   .toasts { inset-inline: 16px; transform: none; }
+  /* Once the drawer is full width the bottom of the screen is its primary
+     action, and the toast sat over the lower half of Checkout — reachable from
+     four handlers that fire with the cart already open: promo accepted, promo
+     rejected, line removed, order placed. Docked to the top it lands on the
+     free-delivery progress line instead, held clear of the close button, which
+     is the only control up there. Wider screens keep it at the bottom, where
+     the drawer is a side panel and never met it. */
+  body.is-locked .toasts {
+    bottom: auto;
+    top: calc(env(safe-area-inset-top, 0px) + 18px);
+    margin-inline-end: 60px;
+  }
   .cart__panel { width: 100%; }
   .rating__bar { grid-template-columns: 2.8em minmax(0, 1fr) 2.6em; gap: 8px; }
 }
@@ -2060,6 +2093,10 @@ body.no-webgl .hero::after {
   .cart-line__remove { width: 40px; height: 40px; margin: -8px -10px -8px 0; }
   .card__peek { padding: 12px 22px; }
   .chip-flavour { padding: 12px 14px; }
+  /* These two were missed: the range filters came out 41px tall and the
+     delivery-zone select only 31px, well under the rest of this block. */
+  .filters button { min-height: 44px; }
+  .cart__zone { min-height: 44px; padding-block: 0; }
   .footer__col a { padding: 9px 0; }
   .brand { padding: 6px 0; }
   .faq__q { padding: 26px 0; }
