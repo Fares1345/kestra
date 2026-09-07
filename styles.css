@@ -275,6 +275,7 @@ body.no-webgl .stage { display: none; }
 .intro__word {
   display: flex;
   justify-content: center;
+  direction: ltr; /* the name is spelled out span by span; see .brand above */
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
@@ -399,7 +400,13 @@ body.is-intro .header { transform: translateY(-100%); }
 
 .header__inner { display: flex; align-items: center; gap: 28px; height: 68px; }
 
-.brand { display: inline-flex; align-items: center; gap: 11px; color: var(--text); }
+/* KESTRA is a Latin logotype and a fixed lockup: the mark leads, the word
+   follows, in every language. Both this and the intro wordmark are flex rows,
+   and a flex row reverses its main axis under dir="rtl" — so in Arabic the
+   header came out as "KESTRA <mark>" and the intro spelled the name ARTSEK,
+   one letter span at a time. Direction is pinned here rather than relying on
+   the document's. */
+.brand { display: inline-flex; align-items: center; gap: 11px; color: var(--text); direction: ltr; }
 .brand__mark { color: var(--accent); transition: color 500ms var(--ease); }
 .brand__word {
   font-family: var(--font-display);
