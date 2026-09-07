@@ -12,7 +12,7 @@ import {
   REVIEWS, RATING_SUMMARY, FAQ, SUBSCRIPTION_DISCOUNT, MIX_TARGET,
   priceFor, mixedPackPrice,
 } from './data.js';
-import { t, pick, money, num, deliveryWindow, VAT_RATE, onLanguageChange } from './i18n.js';
+import { t, pick, money, num, serial, deliveryWindow, VAT_RATE, onLanguageChange } from './i18n.js';
 import { observeReveals } from './reveal.js';
 
 const CART_KEY = 'kestra.cart.v2';
@@ -144,7 +144,7 @@ export function createStore({ onFlavour, onPackChange } = {}) {
   let zoneIndex = 0;
 
   const cartPanel = $('[data-cart]');
-  const pdpPanel = $('[data-pdp]');
+  const pdpPanel = $('.pdp[data-pdp]');
   const cartOverlay = createOverlay(cartPanel);
   const pdpOverlay = createOverlay(pdpPanel);
 
@@ -211,7 +211,7 @@ export function createStore({ onFlavour, onPackChange } = {}) {
     host.innerHTML = `
       <p class="eyebrow hero__eyebrow">
         <span class="eyebrow__dot" aria-hidden="true"></span>
-        No. ${esc(p.index)} — ${esc(pick(p.name))}
+        ${esc(t('product.no', { n: serial(p.index) }))} — ${esc(pick(p.name))}
       </p>
       <h1 class="display hero__title">${t('hero.title')}</h1>
       <p class="hero__lede">${esc(t('hero.lede'))}</p>
@@ -278,13 +278,13 @@ export function createStore({ onFlavour, onPackChange } = {}) {
           <ul class="card__badges">
             ${p.badges.map((b) => `<li>${esc(pick(b))}</li>`).join('')}
           </ul>
-          <button class="card__peek" type="button" data-pdp="${p.id}">
+          <button class="card__peek" type="button" data-pdp-open="${p.id}">
             <span>${esc(t('shop.quickLook'))}</span>
           </button>
         </div>
         <div class="card__body">
           <div class="card__row">
-            <span class="card__index">No. ${esc(p.index)}</span>
+            <span class="card__index">${esc(t('product.no', { n: serial(p.index) }))}</span>
             <span class="card__rating">${STAR}${num(p.rating)}<i>(${num(p.reviews)})</i></span>
           </div>
           <h3 class="card__name">${esc(pick(p.name))}</h3>
@@ -669,7 +669,7 @@ export function createStore({ onFlavour, onPackChange } = {}) {
         <ul class="pdp__badges">${p.badges.map((b) => `<li>${esc(pick(b))}</li>`).join('')}</ul>
       </div>
       <div class="pdp__info">
-        <span class="eyebrow">No. ${esc(p.index)} · ${esc(pick(p.flavour))}</span>
+        <span class="eyebrow">${esc(t('product.no', { n: serial(p.index) }))} · ${esc(pick(p.flavour))}</span>
         <h2 id="pdp-title" class="pdp__name">${esc(pick(p.name))}</h2>
         <div class="pdp__rating">
           <span class="pdp__stars">${stars(Math.round(p.rating))}</span>
@@ -752,8 +752,13 @@ export function createStore({ onFlavour, onPackChange } = {}) {
         return;
       }
 
-      const pdpBtn = target.closest('[data-pdp]');
-      if (pdpBtn) return openPdp(pdpBtn.dataset.pdp);
+      // data-pdp marks the dialog itself, so a trigger cannot share the name:
+      // every click inside the open dialog — its own close button included —
+      // matched closest('[data-pdp]'), reopened the dialog on an empty product
+      // id, and threw before the close handler further down was ever reached.
+      // The dialog could then only be dismissed with Escape.
+      const pdpBtn = target.closest('[data-pdp-open]');
+      if (pdpBtn) return openPdp(pdpBtn.dataset.pdpOpen);
 
       const flavourBtn = target.closest('button[data-flavour]');
       if (flavourBtn) return select(flavourBtn.dataset.flavour, 'rail');

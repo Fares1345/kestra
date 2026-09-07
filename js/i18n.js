@@ -89,6 +89,7 @@ export const STRINGS = {
     'ticker.5': '73% recycled aluminium',
 
     'shop.eyebrow': 'The range',
+    'product.no': 'No. {n}',
     'shop.title': 'Six cans. One curve.',
     'shop.lede':
       'Every flavour runs the same formula underneath — what changes is the fruit, the acid and how hard the caffeine is pushed. Start with Solstice if you have no idea.',
@@ -262,7 +263,7 @@ export const STRINGS = {
     'scene.fill.title': 'تُعبّأ وتُغلق في مرور واحد.',
     'scene.fill.body':
       'تُعبّأ العلب بضغط معاكس ليبقى الغاز في مكانه، ثم تُغلق بحياكة مزدوجة خلال ثوانٍ. كلما قلّ الوقت الذي تبقى فيه العلبة مفتوحة، قلّ ما تفقده من الرائحة.',
-    'scene.fill.meta': 'الخط ٢ · ٣٫٤ حجم CO₂',
+    'scene.fill.meta': 'الخط ٢ · ٣٫٤ حجم \u2068CO\u2082\u2069',
     'scene.pack.no': '٠٣',
     'scene.pack.title': 'اثنتا عشرة في الصندوق.',
     'scene.pack.body':
@@ -282,6 +283,7 @@ export const STRINGS = {
     'ticker.5': '٧٣٪ ألمنيوم معاد تدويره',
 
     'shop.eyebrow': 'التشكيلة',
+    'product.no': 'رقم {n}',
     'shop.title': 'ست علب. منحنى واحد.',
     'shop.lede':
       'كل نكهة تقوم على التركيبة نفسها؛ ما يتغيّر هو الفاكهة والحموضة ومقدار دفع الكافيين. ابدأ بـ«سولستيس» إن لم تكن متأكداً.',
@@ -374,7 +376,7 @@ export const STRINGS = {
     'pay.applePay': 'Apple Pay',
     'pay.mada': 'مدى',
     'pay.card': 'بطاقة',
-    'pay.secure': 'محمي بخدمة 3-D Secure. لا تُحفظ بيانات البطاقة.',
+    'pay.secure': 'محمي بخدمة \u20683-D Secure\u2069. لا تُحفظ بيانات البطاقة.',
     'pay.placed': 'تم الطلب — {amount}. أُرسل التأكيد إلى بريدك.',
     'pay.demo': 'واجهة دفع تجريبية — لا يتم تحصيل أي مبلغ.',
 
@@ -412,14 +414,62 @@ export const STRINGS = {
  * state
  * ------------------------------------------------------------------ */
 
-function initialLang() {
+/**
+ * The visitor's choice has to survive a reload, and localStorage is not always
+ * there to hold it: a private window, or a browser set to block site data,
+ * makes both the read and the write fail silently. When that happened the page
+ * fell back to sniffing the browser every load, so the language appeared to
+ * flip on its own and the toggle never stuck. A cookie is written alongside,
+ * and either one is enough to remember.
+ */
+function readStored() {
   try {
     const saved = localStorage.getItem(STORE_KEY);
     if (saved && LANGS[saved]) return saved;
   } catch {
-    /* private mode */
+    /* storage blocked */
   }
-  return (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+  const hit = document.cookie.match(/(?:^|;\s*)kestra_lang=(\w+)/);
+  return hit && LANGS[hit[1]] ? hit[1] : null;
+}
+
+function writeStored(value) {
+  try {
+    localStorage.setItem(STORE_KEY, value);
+  } catch {
+    /* storage blocked */
+  }
+  try {
+    document.cookie = `kestra_lang=${value};path=/;max-age=31536000;samesite=lax`;
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Which language a first-time visitor lands in. navigator.language alone is not
+ * a reliable signal — browsers with fingerprinting protection report a
+ * standardised en-US no matter where the reader is — so every declared
+ * language is checked, and the resolved time zone is consulted as a fallback.
+ * An explicit ?lang= wins over all of it.
+ */
+const AR_ZONES = /^(Asia\/(Riyadh|Aden|Amman|Baghdad|Bahrain|Beirut|Damascus|Dubai|Gaza|Hebron|Jerusalem|Kuwait|Muscat|Qatar)|Africa\/(Algiers|Cairo|Casablanca|Khartoum|Tripoli|Tunis|Nouakchott|Djibouti|Mogadishu|El_Aaiun))$/;
+
+function detectLang() {
+  const declared = navigator.languages?.length ? navigator.languages : [navigator.language || 'en'];
+  if (declared.some((code) => String(code).toLowerCase().startsWith('ar'))) return 'ar';
+  try {
+    if (AR_ZONES.test(Intl.DateTimeFormat().resolvedOptions().timeZone || '')) return 'ar';
+  } catch {
+    /* no Intl */
+  }
+  return 'en';
+}
+
+function initialLang() {
+  const forced = new URLSearchParams(location.search).get('lang');
+  if (forced && LANGS[forced]) return forced;
+  return readStored() ?? detectLang();
 }
 
 let current = initialLang();
@@ -428,10 +478,25 @@ const listeners = new Set();
 export const lang = () => current;
 export const isRTL = () => LANGS[current].dir === 'rtl';
 
+/**
+ * Drop a value into a sentence without letting it reorder the sentence.
+ *
+ * An Arabic line that contains a Latin run — a promo code, a card brand, a
+ * price in western digits — is laid out by the bidirectional algorithm, and
+ * the punctuation on either side of that run is directionally neutral: it
+ * takes its side from whatever is around it, so a full stop after a Latin
+ * word lands at the far end of the line and the sentence reads as if the
+ * words had been shuffled. First-strong isolates fence the run off: the
+ * value picks up its own direction and the sentence around it keeps its own.
+ */
+const FSI = '\u2068';
+const PDI = '\u2069';
+export const isolate = (value) => `${FSI}${value}${PDI}`;
+
 /** Look up a string, filling {placeholders}. Falls back to English, then the key. */
 export function t(key, vars) {
   let out = STRINGS[current]?.[key] ?? STRINGS.en[key] ?? key;
-  if (vars) for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, v);
+  if (vars) for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, isolate(v));
   return out;
 }
 
@@ -449,11 +514,7 @@ export function onLanguageChange(fn) {
 export function setLanguage(next) {
   if (!LANGS[next] || next === current) return;
   current = next;
-  try {
-    localStorage.setItem(STORE_KEY, next);
-  } catch {
-    /* ignore */
-  }
+  writeStored(next);
   applyDocumentLanguage();
   listeners.forEach((fn) => fn(next));
 }
@@ -498,6 +559,15 @@ export function money(amount) {
 
 export function num(value) {
   return new Intl.NumberFormat(LANGS[current].locale).format(value);
+}
+
+/**
+ * A product's catalogue number, in the active language's numerals and still
+ * two digits wide — the padding is done with the locale's own zero, so Arabic
+ * gets ٠١ rather than a western 0 glued to an Arabic-Indic 1.
+ */
+export function serial(index) {
+  return num(Number(index)).padStart(2, num(0));
 }
 
 /** A weekday range for the delivery estimate, in the active locale. */

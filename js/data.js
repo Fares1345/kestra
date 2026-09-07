@@ -426,7 +426,7 @@ export const FAQ = [
     q: { en: 'How do I pay?', ar: 'كيف أدفع؟' },
     a: {
       en: 'Apple Pay, mada, and Visa or Mastercard. All card payments run through 3-D Secure and no card details are stored on our side. Cash on delivery is not offered.',
-      ar: 'Apple Pay ومدى وفيزا أو ماستركارد. تمر جميع مدفوعات البطاقات عبر 3-D Secure ولا تُحفظ بيانات البطاقة لدينا. الدفع عند الاستلام غير متاح.',
+      ar: 'Apple Pay ومدى وفيزا أو ماستركارد. تمر جميع مدفوعات البطاقات عبر ⁨3-D Secure⁩ ولا تُحفظ بيانات البطاقة لدينا. الدفع عند الاستلام غير متاح.',
     },
   },
   {
