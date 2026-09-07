@@ -11,12 +11,13 @@
 
 import * as THREE from 'three';
 
-// A tall slim can, not a sleek one: 55.3 mm across and 163 mm tall, which is
-// a 2.95:1 silhouette rather than the 2.59:1 of a standard 355 mL sleek. The
-// volume still works — pi * 2.765^2 * 16.3 is 391 cm3 gross, and a 355 mL net
-// fill sits inside that once the base dome and headspace are taken out.
-const R = 0.2765; // body radius
-const H = 1.63; // overall height
+// 58 x 157 mm: the actual dimensions of a 355 mL sleek can as it comes off a
+// Ball or Rexam line, 2.71:1. The previous 55.3 x 163 (2.95:1) was slimmer
+// than anything anyone manufactures, and a can whose proportions do not match
+// a real one reads as a scale model of a can rather than a can — no amount of
+// material work fixes that.
+const R = 0.29; // body radius
+const H = 1.57; // overall height
 
 /* ------------------------------------------------------------------ *
  * profile builder with corner fillets
@@ -94,26 +95,26 @@ class Profile {
 // is ~51.5 mm across the seam. That is a 5 mm neck-in, not a 19 mm one: the
 // can is a straight cylinder for ~89% of its height and only steps in at the
 // very top. Necking it further is what turns a can into a bottle.
-const NECK_R = 0.254; // outer radius at the seam: a 200 end, 50.8 mm
-const RIM_INNER_R = 0.232; // the lid panel inside the curl
-const RIM_TOP_Y = 1.6285; // crown of the rolled rim
-const LID_Y = 1.608; // lid panel, recessed ~2 mm below the crown
+const NECK_R = 0.262; // outer radius at the seam: a 202 end, 52.4 mm
+const RIM_INNER_R = 0.239; // the lid panel inside the curl
+const RIM_TOP_Y = 1.5685; // crown of the rolled rim
+const LID_Y = 1.549; // lid panel, recessed ~2 mm below the crown
 
 function bodyProfile() {
   return new Profile()
-    .at(0, 0.086) // centre of the concave base dome
-    .at(0.100, 0.078, 0.055)
-    .at(0.196, 0.024, 0.038)
-    .at(0.240, 0.002, 0.008) // the thin ring the can actually stands on
-    .at(0.258, 0.015, 0.007)
-    .at(R, 0.042, 0.022) // out to full diameter, and fast: the base is a
-    .at(R, 1.500, 0.016) //   narrow bright ring, not a thick dark foot
-    .at(0.266, 1.542, 0.038) // shoulder — one short, shallow sweep
-    .at(NECK_R, 1.580, 0.022) // neck: 4.5 mm of step, and that is all
-    .at(NECK_R, 1.600, 0.005)
-    .at(0.2585, 1.6135, 0.006) // rolled rim, outer bulge
-    .at(0.2495, RIM_TOP_Y, 0.005) // crown of the rim
-    .at(RIM_INNER_R, 1.6185, 0.005)
+    .at(0, 0.083) // centre of the concave base dome
+    .at(0.105, 0.075, 0.058)
+    .at(0.206, 0.023, 0.040)
+    .at(0.252, 0.002, 0.009) // the thin ring the can actually stands on
+    .at(0.271, 0.014, 0.008)
+    .at(R, 0.041, 0.023) // out to full diameter, and fast: the base is a
+    .at(R, 1.445, 0.017) //   narrow bright ring, not a thick dark foot
+    .at(0.279, 1.486, 0.040) // shoulder — one short, shallow sweep
+    .at(NECK_R, 1.522, 0.023) // neck: 5.6 mm of step, and that is all
+    .at(NECK_R, 1.541, 0.005)
+    .at(0.271, 1.554, 0.006) // rolled rim, outer bulge
+    .at(0.262, RIM_TOP_Y, 0.005) // crown of the rim
+    .at(RIM_INNER_R, 1.559, 0.005)
     .at(RIM_INNER_R, LID_Y)
     // 16 steps, not 7. At a 4 mm fillet radius seven segments are visible as
     // hard horizontal facets around the shoulder — the "grooves".
@@ -130,11 +131,11 @@ function lidProfile() {
     // up, very slightly domed, sitting a couple of millimetres below the curl
     // so the cans stack.
     .at(RIM_INNER_R, LID_Y)
-    .at(0.212, 1.5975, 0.010) // down the countersink wall
-    .at(0.196, 1.5945, 0.008) // the countersink floor
-    .at(0.180, 1.6005, 0.010) // back up to the panel
-    .at(0.095, 1.6045, 0.16) // the panel, gently domed
-    .at(0, 1.6055)
+    .at(0.222, 1.5385, 0.010) // down the countersink wall
+    .at(0.206, 1.5356, 0.008) // the countersink floor
+    .at(0.189, 1.5416, 0.010) // back up to the panel
+    .at(0.100, 1.5454, 0.16) // the panel, gently domed
+    .at(0, 1.5464)
     .build(9);
 }
 
@@ -198,21 +199,21 @@ function tabGeometry() {
   // Laid out in the tab's own plane, in the same units as the can: a narrow
   // nose over the rivet widening to a rounded tail you can get a finger under.
   const shape = new THREE.Shape();
-  const noseX = -0.0912;
-  const noseW = 0.0392;
-  const tailX = 0.1272;
-  const tailW = 0.070;
+  const noseX = -0.0957;
+  const noseW = 0.0411;
+  const tailX = 0.1334;
+  const tailW = 0.0734;
 
-  shape.moveTo(-0.053, -noseW);
+  shape.moveTo(-0.0556, -noseW);
   shape.quadraticCurveTo(noseX, -noseW, noseX, 0);
-  shape.quadraticCurveTo(noseX, noseW, -0.053, noseW);
-  shape.lineTo(0.0742, tailW);
+  shape.quadraticCurveTo(noseX, noseW, -0.0556, noseW);
+  shape.lineTo(0.0778, tailW);
   shape.quadraticCurveTo(tailX, tailW, tailX, 0);
-  shape.quadraticCurveTo(tailX, -tailW, 0.0742, -tailW);
+  shape.quadraticCurveTo(tailX, -tailW, 0.0778, -tailW);
   shape.closePath();
 
-  shape.holes.push(ring(0.0541, 0, 0.0488, 0.035, 30)); // finger hole
-  shape.holes.push(ring(-0.0541, 0, 0.0148, 0.0148, 16)); // rivet hole
+  shape.holes.push(ring(0.0567, 0, 0.0512, 0.0367, 30)); // finger hole
+  shape.holes.push(ring(-0.0567, 0, 0.0155, 0.0155, 16)); // rivet hole
 
   const g = new THREE.ExtrudeGeometry(shape, {
     depth: 0.007,
@@ -246,7 +247,7 @@ export function buildCanGeometries({ segments = 160, tab = true } = {}) {
 // A real end is riveted dead centre, and the tab hangs off that point: nose
 // toward the score, finger lift the other way. Placing the tab by its middle
 // instead put the rivet off-centre and swung the nose to the wrong side.
-export const TAB_OFFSET = { y: LID_Y + 0.008, z: -0.0541 };
+export const TAB_OFFSET = { y: LID_Y + 0.008, z: -0.0567 };
 
 /**
  * Build the can. `maps` carries the canvases from artwork.js; the caller owns

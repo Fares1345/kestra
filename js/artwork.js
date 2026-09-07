@@ -224,10 +224,12 @@ export function makeBackdrop(accent = '#FF6B2C') {
   ctx.fillStyle = '#05060a';
   ctx.fillRect(0, 0, W, H);
 
-  // The pool of light the subject stands in.
-  const pool = ctx.createRadialGradient(W * 0.5, H * 0.58, 0, W * 0.5, H * 0.58, W * 0.3);
-  pool.addColorStop(0, '#171a21');
-  pool.addColorStop(0.4, '#0d1015');
+  // The pool of light the subject stands in. A product shot has a graduated
+  // sweep behind it — light behind the subject, falling off to the corners.
+  // Tightened and darkened it reads as a void, and the can floats in it.
+  const pool = ctx.createRadialGradient(W * 0.5, H * 0.56, 0, W * 0.5, H * 0.56, W * 0.46);
+  pool.addColorStop(0, '#2b313c');
+  pool.addColorStop(0.42, '#171b23');
   pool.addColorStop(1, 'rgba(5,6,10,0)');
   ctx.fillStyle = pool;
   ctx.fillRect(0, 0, W, H);

@@ -420,7 +420,7 @@ export function createStage(canvas, { quality, product, products }) {
     new THREE.MeshBasicMaterial({
       map: new THREE.CanvasTexture(makeContactShadow()),
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.92,
       depthWrite: false,
     })
   );
@@ -431,13 +431,18 @@ export function createStage(canvas, { quality, product, products }) {
 
   // Dissolved well inside its own radius — a visible floor edge is the fastest
   // way to make a render look like a render.
+  // The floor was 0x07080b against a near-black room, so it rendered as
+  // nothing: no surface, and a contact shadow with nothing to fall on. A can
+  // with no ground under it reads as a toy floating in a void no matter how
+  // well the can itself is built, so the floor is lifted until it is a
+  // surface you can see the can standing on.
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(7, 64),
     new THREE.MeshStandardMaterial({
-      color: 0x07080b,
-      roughness: 0.62,
-      metalness: 0.14,
-      envMapIntensity: 0.35,
+      color: 0x1a1e26,
+      roughness: 0.42,
+      metalness: 0.2,
+      envMapIntensity: 1.05,
       transparent: true,
       alphaMap: new THREE.CanvasTexture(makeFloorFade()),
       depthWrite: false,
