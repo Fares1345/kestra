@@ -482,7 +482,21 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
   const tmp = new THREE.Vector3();
   const tmpTarget = new THREE.Vector3();
 
+  /**
+   * A camera locked to a mathematically exact point is the thing that reads as
+   * CGI even when everything in front of it is right. A real one is on a rig
+   * that breathes. This is that breath and nothing more: two slow sine pairs
+   * at incommensurate periods so the drift never visibly repeats, and an
+   * amplitude of about four millimetres at can scale — under a pixel of
+   * movement per second, felt rather than seen. The target drifts by less than
+   * the camera does, which tilts the frame very slightly as it goes.
+   */
+  let float = 0;
+  const FLOAT_POS = 0.0042;
+  const FLOAT_AIM = 0.0018;
+
   function updateLive(dt) {
+    float += dt;
     const id = sampleStations(scrollY);
     if (id && id !== activeId) {
       activeId = id;
@@ -504,12 +518,12 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
     // run down Z, so scaling it there slid the camera past the action instead
     // of away from it.
     if (l.distance !== 1) tmp.sub(frameTarget).multiplyScalar(l.distance).add(frameTarget);
-    tmp.x += hero.smoothed.x * 0.26 - pan;
-    tmp.y += hero.smoothed.y * 0.15 + l.lift;
+    tmp.x += hero.smoothed.x * 0.26 - pan + Math.sin(float * 0.41) * FLOAT_POS;
+    tmp.y += hero.smoothed.y * 0.15 + l.lift + Math.sin(float * 0.63 + 1.7) * FLOAT_POS * 0.8;
 
     tmpTarget.copy(frameTarget);
-    tmpTarget.x -= pan;
-    tmpTarget.y += l.lift;
+    tmpTarget.x -= pan - Math.sin(float * 0.29 + 0.6) * FLOAT_AIM;
+    tmpTarget.y += l.lift + Math.sin(float * 0.37 + 2.4) * FLOAT_AIM;
 
     camera.position.lerp(tmp, Math.min(1, dt * 5));
     camera.lookAt(tmpTarget);

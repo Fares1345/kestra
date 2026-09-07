@@ -18,6 +18,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 import { createCan, buildCanGeometries, CAN_DIMENSIONS } from './can.js';
 import { createPack } from './pack.js';
@@ -606,6 +607,62 @@ export function createStage(canvas, { quality, product, products }) {
   scene.add(dust, sparks);
 
   /* ---------- post ---------- */
+
+  /**
+   * The last thing a photographed can passes through before it is a picture:
+   * a lens and a sensor. Neither is perfect, and the imperfections are what
+   * the eye reads as "shot" rather than "rendered".
+   *
+   *   - The corners fall off. Every lens does this; a render that is evenly
+   *     lit corner to corner is the giveaway.
+   *   - The corners also split slightly into their colour channels, because
+   *     a lens does not focus every wavelength to the same radius. Kept to
+   *     under a pixel and pushed entirely into the far edges, where it is
+   *     felt rather than seen.
+   *
+   * Grain is deliberately not here: the page already lays a single animated
+   * grain layer over everything, and a second one only muddies it.
+   */
+  const FilmShader = {
+    uniforms: {
+      tDiffuse: { value: null },
+      uVignette: { value: 0.24 },
+      uAberration: { value: 0.0016 },
+    },
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D tDiffuse;
+      uniform float uVignette;
+      uniform float uAberration;
+      varying vec2 vUv;
+
+      void main() {
+        vec2 c = vUv - 0.5;
+        float r = length(c) * 1.4142;
+
+        // Aberration is zero across the middle two thirds of the frame and
+        // ramps in only at the edges, the way a real lens misbehaves.
+        float edge = smoothstep(0.55, 1.0, r);
+        vec2 shift = c * uAberration * edge;
+        vec3 col;
+        col.r = texture2D(tDiffuse, vUv + shift).r;
+        col.g = texture2D(tDiffuse, vUv).g;
+        col.b = texture2D(tDiffuse, vUv - shift).b;
+
+        col *= 1.0 - uVignette * pow(r, 2.4);
+
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
+  };
+
+  let filmPass = null;
   let composer = null;
   let bloomPass = null;
   let bokehPass = null;
@@ -626,6 +683,10 @@ export function createStage(canvas, { quality, product, products }) {
     bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.34, 0.55, 0.92);
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
+    // After OutputPass, so grain and falloff land on the graded image rather
+    // than on linear light where the tone curve would flatten them out.
+    filmPass = new ShaderPass(FilmShader);
+    composer.addPass(filmPass);
   }
   if (bloomEnabled) buildComposer();
 
@@ -824,7 +885,7 @@ export function createStage(canvas, { quality, product, products }) {
   function degrade() {
     if (degraded) return;
     degraded = true;
-    bloomEnabled = false;
+    bloomEnabled = false; // which also takes the composer, and the film pass with it, out of the loop
     if (bokehPass) bokehPass.enabled = false;
     dust.material.uniforms.uOpacity.value *= 0.5;
     resize();
