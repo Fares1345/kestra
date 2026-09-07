@@ -615,12 +615,7 @@ export function createStore({ onFlavour, onPackChange } = {}) {
       <div class="pay__methods" role="radiogroup" aria-label="${esc(t('pay.title'))}">
         <button class="pay__method${payMethod === 'applepay' ? ' is-active' : ''}" type="button"
                 role="radio" aria-checked="${payMethod === 'applepay'}" data-pay-method="applepay">
-          <span class="pay__apple" aria-hidden="true">
-            <svg viewBox="0 0 13.4 16.2" width="14" height="17" focusable="false">
-              <path fill="currentColor" d="M8.63 3.3c.53-.66.89-1.56.79-2.47-.77.04-1.71.52-2.26 1.18-.5.58-.93 1.5-.81 2.38.86.07 1.74-.44 2.28-1.09Zm.78 1.24c-1.25-.07-2.31.71-2.9.71-.6 0-1.51-.67-2.48-.65-1.28.02-2.46.74-3.11 1.89-1.33 2.3-.35 5.71 1.94 7.58.6.6 1.31 1.27 2.25 1.24.9-.04 1.24-.58 2.33-.58 1.09 0 1.4.58 2.35.56.97-.02 1.59-.6 2.18-1.2.69-.69.97-1.36.99-1.4-.02-.01-1.9-.73-1.92-2.9-.02-1.81 1.48-2.68 1.55-2.72-.85-1.25-2.17-1.39-2.63-1.42Z"/>
-            </svg>
-            <b>Pay</b>
-          </span>
+          ${APPLE_PAY_MARK}
           <span class="sr-only">${esc(t('pay.applePay'))}</span>
         </button>
         <button class="pay__method${payMethod === 'mada' ? ' is-active' : ''}" type="button"
@@ -645,11 +640,26 @@ export function createStore({ onFlavour, onPackChange } = {}) {
           <input type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="CVC" aria-label="CVC">
         </div>
       </div>
-      <button class="btn btn--solid btn--wide btn--pay" type="button" data-place-order>
-        ${payMethod === 'applepay' ? '' : esc(t('cart.checkout')) + ' · '}${money(sums.total)}
+      <button class="btn btn--wide btn--pay${payMethod === 'applepay' ? ' btn--applepay' : ' btn--solid'}"
+              type="button" data-place-order>
+        ${payMethod === 'applepay'
+          ? `<span class="pay__btn-lockup">${esc(t('pay.buyWith'))} ${APPLE_PAY_MARK}</span>`
+          : esc(t('cart.checkout')) + ' · '}${payMethod === 'applepay' ? '' : money(sums.total)}
       </button>
       <p class="pay__secure">${esc(t('pay.secure'))}</p>`;
   }
+
+  /**
+   * The Apple Pay lockup. The glyph is a path so it does not depend on a
+   * font; the word is real text in the page's own self-hosted family, which
+   * is the only way it renders the same on every device.
+   */
+  const APPLE_PAY_MARK = `<span class="pay__apple" aria-hidden="true">
+    <svg viewBox="0 0 13.4 16.2" width="14" height="17" focusable="false">
+      <path fill="currentColor" d="M8.63 3.3c.53-.66.89-1.56.79-2.47-.77.04-1.71.52-2.26 1.18-.5.58-.93 1.5-.81 2.38.86.07 1.74-.44 2.28-1.09Zm.78 1.24c-1.25-.07-2.31.71-2.9.71-.6 0-1.51-.67-2.48-.65-1.28.02-2.46.74-3.11 1.89-1.33 2.3-.35 5.71 1.94 7.58.6.6 1.31 1.27 2.25 1.24.9-.04 1.24-.58 2.33-.58 1.09 0 1.4.58 2.35.56.97-.02 1.59-.6 2.18-1.2.69-.69.97-1.36.99-1.4-.02-.01-1.9-.73-1.92-2.9-.02-1.81 1.48-2.68 1.55-2.72-.85-1.25-2.17-1.39-2.63-1.42Z"/>
+    </svg>
+    <b>Pay</b>
+  </span>`;
 
   /* ---------------- product detail ---------------- */
   let pdpState = { productId: PRODUCTS[0].id, packId: '12', subscribe: false };

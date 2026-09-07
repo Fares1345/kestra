@@ -181,6 +181,7 @@ export const STRINGS = {
 
     'pay.title': 'Payment',
     'pay.applePay': 'Apple Pay',
+    'pay.buyWith': 'Buy with',
     'pay.mada': 'mada',
     'pay.card': 'Card',
     'pay.secure': 'Secured by 3-D Secure. Card details are never stored.',
@@ -374,6 +375,7 @@ export const STRINGS = {
 
     'pay.title': 'الدفع',
     'pay.applePay': 'Apple Pay',
+    'pay.buyWith': 'الشراء عبر',
     'pay.mada': 'مدى',
     'pay.card': 'بطاقة',
     'pay.secure': 'محمي بخدمة \u20683-D Secure\u2069. لا تُحفظ بيانات البطاقة.',
