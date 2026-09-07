@@ -79,6 +79,10 @@ const SHOTS = [
 ];
 
 const DURATION = SHOTS[SHOTS.length - 1].t;
+// How far into the shot list a portrait screen starts (seconds). The macro
+// opening runs to t=4.25 and only reads as a can once it starts pulling back,
+// so portrait joins during the pull-back and gets a 3.4s intro, not 6.2s.
+const INTRO_SKIP_IN = 2.8;
 
 const CUES = [
   { t: 0.35, name: 'wake' },
@@ -259,11 +263,33 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
     };
   }
 
+  /**
+   * The scroll stations each carry a narrow-screen distance, but the intro was
+   * driving the camera straight from its shot list, so a phone played the
+   * desktop framing on a viewport less than half as wide and the subject ran
+   * off both edges. Portrait loses horizontal field, so the camera backs off
+   * along its own view axis to put the same amount of can back in frame.
+   */
+  function introPullback() {
+    const aspect = innerWidth / innerHeight;
+    if (aspect >= 0.95) return 1;
+    return Math.min(1.75, 1 + (0.95 - aspect) * 1.15);
+  }
+
+  const introShift = new THREE.Vector3();
+
   function applyShot(f) {
-    camera.position.copy(f.position);
+    const back = introPullback();
+    if (back !== 1) {
+      introShift.copy(f.position).sub(f.target).multiplyScalar(back).add(f.target);
+      camera.position.copy(introShift);
+    } else {
+      camera.position.copy(f.position);
+    }
     camera.lookAt(f.target);
-    if (Math.abs(camera.fov - f.fov) > 0.001) {
-      camera.fov = f.fov;
+    const wantFov = f.fov + (back !== 1 ? 2 : 0);
+    if (Math.abs(camera.fov - wantFov) > 0.001) {
+      camera.fov = wantFov;
       camera.updateProjectionMatrix();
     }
     stage.canPivot.rotation.y = f.spin;
@@ -532,8 +558,13 @@ export function createDirector(stage, { onCue, onFinish, onVisual, onStation } =
 
     play({ instant = false } = {}) {
       phase = 'intro';
-      elapsed = 0;
-      startedAt = performance.now();
+      // On a phone the opening macro is an unreadable full-bleed crop for its
+      // first couple of seconds — it works at 16:9 and not at 9:19.5. Portrait
+      // joins the sequence after it, which also makes the intro shorter on the
+      // device where people are least patient with one.
+      const portrait = innerWidth / innerHeight < 0.95;
+      elapsed = portrait ? INTRO_SKIP_IN : 0;
+      startedAt = performance.now() - elapsed * 1000;
       firedCues = new Set();
       if (instant) {
         landImmediately();

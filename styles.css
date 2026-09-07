@@ -349,6 +349,21 @@ body.no-webgl .stage { display: none; }
   transition: color 200ms, border-color 200ms, background 200ms;
 }
 [dir='rtl'] .intro__skip svg { transform: scaleX(-1); }
+/* On touch the button is the visible affordance even though a press anywhere
+   now skips, so it is bigger, brighter, and does not wait to fade in. */
+@media (pointer: coarse) {
+  .intro__skip {
+    inset-inline-end: 50%;
+    translate: 50% 0;
+    inset-block-end: max(30px, env(safe-area-inset-bottom, 0px) + 22px);
+    padding: 15px 24px;
+    font-size: 13px;
+    color: var(--text-1);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.09);
+    animation-delay: 300ms;
+  }
+}
 .intro__skip:hover { color: #fff; border-color: var(--accent); background: rgba(255, 255, 255, 0.07); }
 .intro.cue-handoff .intro__skip { opacity: 0; pointer-events: none; }
 @keyframes fadeIn { to { opacity: 1; } }

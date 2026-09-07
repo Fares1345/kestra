@@ -208,9 +208,12 @@ async function boot() {
 
   /* ---- photograph the range while the loader is still up ---- */
   const shots = {};
+  const low = quality?.tier === 'low';
+  const shotW = low ? 360 : 560;
+  const shotH = low ? 464 : 720;
   for (const [i, product] of PRODUCTS.entries()) {
     await new Promise((r) => requestAnimationFrame(r));
-    const url = stage.capture(product, 560, 720);
+    const url = stage.capture(product, shotW, shotH);
     if (url) shots[product.id] = url;
     setProgress(0.35 + ((i + 1) / PRODUCTS.length) * 0.6);
   }
@@ -219,10 +222,6 @@ async function boot() {
   stage.setPackContents(store.packContents);
   director.prime();
   setProgress(1);
-
-  // The first scene is built while the loader is still up; the rest arrive
-  // lazily as the page approaches them.
-  stage.prewarmScene('mix');
 
   stage.update = (dt) => director.update(dt);
   stage.start();
@@ -235,7 +234,12 @@ async function boot() {
   const onKey = (e) => {
     if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') skipIntro();
   };
+  // A phone has no wheel and no keyboard, and touchmove needs a drag — so on
+  // mobile the only way out was a small button, and a tap did nothing at all.
+  // Any press anywhere skips.
+  const onPress = () => skipIntro();
   addEventListener('keydown', onKey);
+  addEventListener('pointerdown', onPress, { passive: true });
   addEventListener('wheel', skipIntro, { passive: true, once: true });
   addEventListener('touchmove', skipIntro, { passive: true, once: true });
 
@@ -243,12 +247,17 @@ async function boot() {
 
   function handoff() {
     removeEventListener('keydown', onKey);
+    removeEventListener('pointerdown', onPress);
     body.classList.remove('is-intro');
     body.classList.add('is-live');
     introUI?.classList.add('cue-done');
     setTimeout(() => introUI?.remove(), 1200);
     observeReveals();
     director.measure();
+    // The journey scenes are built off the critical path: the first one once
+    // the intro is out of the way, the rest lazily as the page reaches them.
+    const warm = () => stage.prewarmScene('mix');
+    'requestIdleCallback' in window ? requestIdleCallback(warm, { timeout: 2500 }) : setTimeout(warm, 900);
   }
 
   /* ---- live interaction ---- */

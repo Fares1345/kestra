@@ -65,7 +65,10 @@ export function detectQuality() {
     dust: low ? 240 : 680,
     bloom: !low,
     dof: !low,
-    maxPixelRatio: low ? 1.75 : 2,
+    // A DPR-3 phone at 1.75 is drawing 3x the fragments of a 1x canvas across
+    // the whole viewport, every frame. 1.4 is a third fewer and, on a screen
+    // this dense, not a difference you can see.
+    maxPixelRatio: low ? 1.4 : 2,
     beads: low ? 320 : 620,
   };
 }
