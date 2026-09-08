@@ -12,7 +12,7 @@ import {
   REVIEWS, RATING_SUMMARY, FAQ, SUBSCRIPTION_DISCOUNT, MIX_TARGET,
   priceFor, mixedPackPrice,
 } from './data.js';
-import { t, pick, money, num, serial, deliveryWindow, VAT_RATE, onLanguageChange } from './i18n.js';
+import { t, pick, money, num, serial, isRTL, deliveryWindow, VAT_RATE, onLanguageChange } from './i18n.js';
 import { observeReveals } from './reveal.js';
 
 const CART_KEY = 'kestra.cart.v2';
@@ -43,16 +43,43 @@ const MAX_QTY = 20;
  * from `mixKey`, which is written as `solstice4-vesper8`, so the price is
  * recomputed here and the line is dropped if the stored figure disagrees.
  */
-function verifiedMixPrice(line) {
-  if (line.mixPrice === undefined || line.mixPrice === null) return true;
-  if (typeof line.mixKey !== 'string') return false;
+/** `solstice6-glacier6` back into { solstice: 6, glacier: 6 }, or null. */
+function parseMixKey(mixKey) {
+  if (typeof mixKey !== 'string') return null;
   const counts = {};
-  for (const part of line.mixKey.split('-')) {
+  for (const part of mixKey.split('-')) {
     const m = /^([a-z]+)(\d+)$/.exec(part);
-    if (!m || !byId[m[1]]) return false;
+    if (!m || !byId[m[1]]) return null;
     counts[m[1]] = (counts[m[1]] || 0) + Number(m[2]);
   }
-  return mixedPackPrice(counts) === line.mixPrice;
+  return counts;
+}
+
+function verifiedMixPrice(line) {
+  if (line.mixPrice === undefined || line.mixPrice === null) return true;
+  const counts = parseMixKey(line.mixKey);
+  return counts !== null && mixedPackPrice(counts) === line.mixPrice;
+}
+
+/**
+ * A mixed pack's description, built when it is drawn rather than when it was
+ * added. It used to be composed once at add time and stored in the cart, which
+ * froze it in whatever language that was: add a mix in English, switch to
+ * Arabic with the cart open, and the line read "4× Solstice, 8× Vesper" in
+ * Latin names and western numerals inside an otherwise Arabic, RTL cart — and
+ * it stayed that way through a reload. Everything else in the store re-renders
+ * on a language change; this one string could not, because it was data instead
+ * of a key. The counts are already in mixKey, so nothing needed to be stored
+ * for this at all.
+ */
+function mixLabelFor(line) {
+  const counts = parseMixKey(line.mixKey);
+  if (!counts) return line.mixLabel || '';
+  // Arabic separates a list with its own comma.
+  const separator = isRTL() ? '، ' : ', ';
+  return PRODUCTS.filter((p) => counts[p.id] > 0)
+    .map((p) => `${num(counts[p.id])}\u00d7 ${pick(p.name)}`)
+    .join(separator);
 }
 
 function loadCart() {
@@ -554,7 +581,7 @@ export function createStore({ onFlavour, onPackChange } = {}) {
           const pack = packById[l.packId];
           const key = lineKey(l);
           const title = l.mixKey ? t('cart.mixed') : pick(p.name);
-          const meta = l.mixLabel || pick(p.flavour);
+          const meta = l.mixKey ? mixLabelFor(l) : pick(p.flavour);
           return `
           <article class="cart-line" style="--accent:${p.accent}">
             <div class="cart-line__thumb">${thumbFor(p)}</div>
@@ -889,14 +916,14 @@ export function createStore({ onFlavour, onPackChange } = {}) {
 
       if (target.closest('[data-mix-add]')) {
         const chosen = PRODUCTS.filter((p) => mix[p.id] > 0);
-        const label = chosen.map((p) => `${num(mix[p.id])}× ${pick(p.name)}`).join(', ');
+        // No mixLabel: the description is built from mixKey at render time so
+        // it follows the active language. See mixLabelFor.
         add({
           productId: chosen[0].id,
           packId: '12',
           subscribe: false,
           qty: 1,
           mixKey: chosen.map((p) => `${p.id}${mix[p.id]}`).join('-'),
-          mixLabel: label,
           mixPrice: mixedPackPrice(mix),
         });
         toast(t('cart.added', { name: t('cart.mixed') }));
