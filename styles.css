@@ -2162,3 +2162,246 @@ body.no-webgl .hero::after {
   .reveal { opacity: 1; transform: none; }
   .formula__row .formula__meter span { width: var(--fill, 0%); }
 }
+
+/* ------------------------------- print ------------------------------- */
+
+/* What anyone actually prints off this site is an order confirmation or the
+   cart, and after that a product's details. Both live in fixed overlays, so on
+   paper they stop being overlays and become the document; the render, the
+   intro, the chrome and every control go away; and the dark ground inverts at
+   the token layer rather than element by element.
+
+   Direction-agnostic like the rest of the file: logical properties only, so an
+   Arabic print is this sheet mirrored, not a second one. */
+
+@media print {
+  @page { margin: 16mm; }
+
+  /* One inversion, at the tokens. The hairlines are the reason this cannot be
+     "background: white": --line and --line-2 are white at 7.5% and 14.5%, which
+     is nothing at all on paper, so every rule and divider on the page has to be
+     restated as a grey. */
+  :root {
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #ffffff;
+    --line: #c7cacd;
+    --line-2: #9aa0a6;
+    --text: #101215;
+    --text-2: #2c3138;
+    --text-3: #4b515a;
+    color-scheme: light;
+  }
+
+  /* The accent maps to its own deep variant — the one JS already writes per
+     flavour — because #ff6b2c comes to 2.9:1 on white and it is the colour the
+     serial numbers, stars, meters and product lines are printed in.
+     It needs !important and it needs the hosts listed: js/main.js sets --accent
+     on :root and js/store.js sets it again as an inline style on body, the hero
+     panel, the PDP body and every cart line, and an inline declaration outranks
+     anything a stylesheet says without it. */
+  :root,
+  body,
+  .cart-line,
+  [data-hero-panel],
+  [data-pdp-body] { --accent: var(--accent-deep) !important; }
+
+  /* Nothing on paper moves, glows or blurs. */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    mask-image: none !important;
+  }
+
+  html, body {
+    background: var(--bg) !important;
+    color: var(--text);
+    /* body.is-locked and body.is-intro both set overflow: hidden, which on
+       paper crops the document to its first page. */
+    overflow: visible !important;
+    min-height: 0;
+  }
+
+  /* Everything that is a screen, not a page: the render and its grain, the
+     opening, the loader, the fixed chrome, the marquee, the scroll cue, the
+     scrims and the light pooled behind the cans. */
+  .stage,
+  .stage-grain,
+  .intro,
+  .loader,
+  .header,
+  .skip-link,
+  .ticker,
+  .hero__scroll,
+  .toasts,
+  .cart__scrim,
+  .pdp__scrim,
+  .card__glow,
+  .pdp__glow,
+  .mix__stageRoom,
+  .formula__room,
+  .scene__copy::before,
+  body.no-webgl .hero::after { display: none !important; }
+
+  /* Controls. A quantity is not one — the two buttons either side of it are,
+     so the stepper loses its buttons and keeps its output. */
+  .nav,
+  .nav-toggle,
+  .lang-btn,
+  .cart-btn,
+  .header__progress,
+  .btn,
+  .icon-btn,
+  .chip,
+  .filters,
+  .card__peek,
+  .cart-line__remove,
+  .cart__back,
+  .pdp__close,
+  .stepper button,
+  .promo,
+  .signup__form,
+  .pay__methods,
+  .pay__card,
+  .switch__track,
+  .faq__icon,
+  .hero__rail { display: none !important; }
+
+  /* The delivery zone is a <select>, but its value is part of the order. */
+  .cart__zone {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text);
+  }
+
+  /* Content that only appears once it has been scrolled to would otherwise
+     print as blank paper. */
+  .reveal,
+  .scene__copy,
+  .hero__copy > *,
+  .faq__item.is-open .faq__a p {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* The cart and the product dialog are the reason to print. They are fixed,
+     clipped, transformed and scrolled on screen; here they are just blocks. */
+  .cart,
+  .pdp {
+    position: static !important;
+    z-index: auto;
+  }
+  .cart__panel,
+  .pdp__panel {
+    position: static !important;
+    inset: auto;
+    display: block !important;
+    width: auto !important;
+    max-width: none;
+    max-height: none;
+    transform: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    background: none !important;
+    border: 0 !important;
+    border-radius: 0;
+  }
+  .cart__body,
+  .cart__pay,
+  .grid,
+  .journey,
+  .card__media,
+  .pdp__media,
+  .stepper { overflow: visible !important; }
+
+  /* An open overlay is a deliberate act: print that, not the storefront
+     standing behind it. */
+  body.is-locked > main,
+  body.is-locked > .footer { display: none !important; }
+
+  /* The page is a scroll on screen — a viewport tall per act. On paper that is
+     several blank sheets between paragraphs. */
+  .hero { min-height: 0; padding-block: 0 18pt; }
+  .hero__grid { grid-template-columns: minmax(0, 1fr); gap: 12pt; }
+  .scene { min-height: 0; }
+  .section { padding-block: 16pt; }
+  .section__head { margin-block-end: 12pt; padding-block-end: 8pt; }
+  .mix,
+  .formula-wrap { display: block; }
+  .mix__list,
+  .formula { margin-block-start: 12pt; }
+  .footer { padding-block: 16pt 0; }
+  .footer__inner { padding-block-end: 12pt; }
+  .cart__foot,
+  .cart__head,
+  .cart__items,
+  .cart__ship,
+  .cart__pay { padding-inline: 0; }
+
+  /* Product shots size themselves rather than filling a viewport-sized well,
+     and lose the pool of accent they are lit with on screen. */
+  .thumb img { height: auto; }
+  .thumb--lg { min-height: 0; }
+  .cart-line__thumb,
+  .pay__line-thumb { background: none; }
+
+  /* The 1px gaps in these grids are the borders — they are drawn as a
+     background behind the tiles, so they only survive if colour is kept. */
+  .grid,
+  .formula,
+  .pdp__facts {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Which pack was chosen has to read without a fill behind it. */
+  .pack.is-active { border-color: var(--accent); }
+  .pack__tag {
+    background: none;
+    color: var(--accent);
+    border: 1px solid var(--line-2);
+  }
+
+  /* A printed link is a dead end unless it says where it goes. In-page anchors
+     go nowhere off the page, so they stay quiet. */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    font-weight: 400;
+    color: var(--text-3);
+    word-break: break-all;
+  }
+
+  /* No heading left at the foot of a page, no card or order line torn in two. */
+  h1, h2, h3, h4,
+  .display,
+  .section__title,
+  .eyebrow,
+  .pay__title,
+  .specs__title,
+  .faq__q { break-after: avoid; }
+
+  .card,
+  .cart-line,
+  .pay__line,
+  .faq__item,
+  .review,
+  .formula__row,
+  .mixer__row,
+  .spec,
+  .pdp__facts > div,
+  .cart__sums,
+  .pay__sums,
+  figure,
+  img { break-inside: avoid; }
+
+  p, li, blockquote, dd { orphans: 3; widows: 3; }
+}
