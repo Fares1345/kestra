@@ -527,11 +527,29 @@ export function toggleLanguage() {
   setLanguage(current === 'en' ? 'ar' : 'en');
 }
 
+/**
+ * The language toggle names the language you would switch *to*, so its label
+ * is always in the other language than the document around it: "العربية" inside an
+ * English page, "English" inside an Arabic one. A foreign-language run with no
+ * lang of its own is spoken in the document's voice, so a screen reader reads
+ * "العربية" through an English synthesiser and it comes out as noise. Only
+ * the label carries the attribute — the button's own aria-label is written in
+ * the page's language and must keep the page's voice.
+ *
+ * This runs from applyDocumentLanguage rather than next to the markup, so the
+ * label is re-tagged on every switch and not only on first load.
+ */
+function tagLanguageToggle() {
+  const label = document.querySelector('[data-lang-toggle] [data-i18n="nav.lang"]');
+  if (label) label.lang = current === 'en' ? 'ar' : 'en';
+}
+
 export function applyDocumentLanguage() {
   const root = document.documentElement;
   root.lang = current;
   root.dir = LANGS[current].dir;
   root.dataset.lang = current;
+  tagLanguageToggle();
 }
 
 /* ------------------------------------------------------------------ *
