@@ -1,0 +1,19 @@
+{
+  "name": "KESTRA — Sparkling energy, engineered",
+  "short_name": "KESTRA",
+  "description": "Green-coffee caffeine buffered with L-theanine, in a 355 mL can. Six flavours, zero crash.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07080B",
+  "theme_color": "#07080B",
+  "lang": "ar",
+  "dir": "auto",
+  "icons": [
+    {
+      "src": "/assets/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    }
+  ]
+}

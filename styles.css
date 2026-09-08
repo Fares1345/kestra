@@ -43,7 +43,11 @@
   --line-2: rgba(255, 255, 255, 0.145);
   --text: #eef0f3;
   --text-2: #a0a7b1;
-  --text-3: #6c737e;
+  /* 4.5:1 on every ground the page uses: the page bg, .surface and .surface-2
+     measure 5.15, 4.89 and 4.70. It was #6c737e, which came to 4.19 on all
+     three — under AA, and it is the token behind every small label, eyebrow
+     and unit on the site, so 115 elements failed on this one value. */
+  --text-3: #7a828d;
 
   --accent: #ff6b2c;
   --accent-deep: #7a2a05;
@@ -1525,6 +1529,7 @@ body.no-webgl .hero::after {
   transition: border-color 240ms, background 240ms;
 }
 .signup__form input::placeholder, .promo input::placeholder, .pay__card input::placeholder { color: var(--text-3); }
+[aria-invalid='true'] { border-color: #e2703e !important; }
 .signup__form input:focus, .promo input:focus, .pay__card input:focus {
   outline: none;
   border-color: var(--accent);

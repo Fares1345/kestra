@@ -944,10 +944,24 @@ export function createStore({ onFlavour, onPackChange } = {}) {
     $('[data-newsletter]')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const input = $('input[type=email]', e.currentTarget);
-      if (!input.value) return;
+      const value = input.value.trim();
+      // The form carries novalidate so the browser's own bubble does not fire
+      // in a language the page may not be in — which meant nothing checked the
+      // address at all and "not-an-email" was welcomed to the list. checkValidity
+      // still applies type=email and required without showing the bubble.
+      if (!value || !input.checkValidity()) {
+        input.setAttribute('aria-invalid', 'true');
+        input.focus();
+        toast(t('signup.invalid'), 'warn');
+        return;
+      }
+      input.removeAttribute('aria-invalid');
       toast(t('signup.done'));
       e.currentTarget.reset();
     });
+    $('[data-newsletter] input[type=email]')?.addEventListener('input', (e) =>
+      e.currentTarget.removeAttribute('aria-invalid')
+    );
   }
 
   /** A short scale pop, so a tap has a visible consequence. */

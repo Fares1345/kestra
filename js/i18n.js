@@ -147,6 +147,7 @@ export const STRINGS = {
     'signup.placeholder': 'you@example.com',
     'signup.cta': 'Join',
     'signup.done': 'You are on the list. Welcome.',
+    'signup.invalid': 'That does not look like an email address.',
     'signup.email': 'Email address',
 
     'cart.title': 'Your cart',
@@ -341,6 +342,7 @@ export const STRINGS = {
     'signup.placeholder': 'you@example.com',
     'signup.cta': 'انضم',
     'signup.done': 'أصبحت في القائمة. أهلاً بك.',
+    'signup.invalid': 'هذا لا يبدو بريداً إلكترونياً صحيحاً.',
     'signup.email': 'البريد الإلكتروني',
 
     'cart.title': 'سلّتك',
