@@ -615,10 +615,17 @@ export function createStage(canvas, { quality, product, products }) {
   scene.add(key.target);
 
   // Mostly white, with the flavour left in as a tint rather than a dye.
+  //
+  // This has to be one function, not a value computed once: setFlavour reaches
+  // in and rewrites the rim's colour on every flavour change, and main.js calls
+  // setFlavour during boot. When the lerp lived only here, the pale rim existed
+  // for the few milliseconds before that first call and never again — the
+  // running site lit an orange can with a fully saturated orange lamp, which is
+  // the exact fault this was written to remove.
   const RIM_WARM_BASE = 0.9;
   const RIM_COOL_BASE = 2;
-  const rimTint = new THREE.Color(product.accent).lerp(new THREE.Color(0xffffff), 0.72);
-  const rimWarm = new THREE.DirectionalLight(rimTint, RIM_WARM_BASE);
+  const rimTintFor = (accent) => new THREE.Color(accent).lerp(new THREE.Color(0xffffff), 0.72);
+  const rimWarm = new THREE.DirectionalLight(rimTintFor(product.accent), RIM_WARM_BASE);
   rimWarm.position.set(2.6, 2.2, -3.4);
   scene.add(rimWarm);
 
@@ -1022,7 +1029,7 @@ export function createStage(canvas, { quality, product, products }) {
       }
       backdropTex.image = makeBackdrop(next.accent);
       backdropTex.needsUpdate = true;
-      rimWarm.color.set(next.accent);
+      rimWarm.color.copy(rimTintFor(next.accent));
       sparks.material.uniforms.uTint.value.set(next.accent).lerp(new THREE.Color('#ffffff'), 0.4);
       dust.material.uniforms.uTint.value.set(next.accent).lerp(new THREE.Color('#ffffff'), 0.82);
       pack?.tintTray(next.accent);
@@ -1171,6 +1178,20 @@ export function createStage(canvas, { quality, product, products }) {
       renderer.dispose();
     },
   };
+
+  /**
+   * Opt-in handle for tools/check/render.mjs, which has to freeze a frame and
+   * read pixels back out of it. Behind a query parameter rather than an
+   * unconditional global, so the shipped page exposes nothing: only
+   * ?stage-probe=1 attaches it.
+   */
+  try {
+    if (new URLSearchParams(location.search).has('stage-probe')) {
+      globalThis.__kestraStage = stage;
+    }
+  } catch {
+    /* no location, no handle */
+  }
 
   return stage;
 }

@@ -6,7 +6,13 @@
  */
 import { BASE } from './harness.mjs';
 
-const ALL = { a11y: './a11y.mjs', rtl: './rtl.mjs', shop: './shop.mjs', layout: './layout.mjs' };
+const ALL = {
+  a11y: './a11y.mjs',
+  rtl: './rtl.mjs',
+  shop: './shop.mjs',
+  layout: './layout.mjs',
+  render: './render.mjs',
+};
 
 const wanted = process.argv.slice(2).filter((a) => !a.startsWith('-'));
 const names = wanted.length ? wanted : Object.keys(ALL);
