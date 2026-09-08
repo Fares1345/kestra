@@ -4,6 +4,11 @@
   "private": true,
   "description": "Storefront for KESTRA energy drinks, with a real-time 3D can and a cinematic opening sequence",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node tools/check/run.mjs",
+    "jsonld": "node tools/build-jsonld.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
   }
 }
