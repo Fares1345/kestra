@@ -2067,9 +2067,22 @@ body.no-webgl .hero::after {
     transform: translateY(-12px);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 300ms var(--ease), transform 300ms var(--ease);
+    /* pointer-events only stops the mouse. Without this the six links stayed
+       in the tab order while invisible: three Tabs from the top of a 390px
+       page put focus inside a pane at opacity 0, and the focus ring was
+       invisible too, so six stops did nothing anyone could see. visibility
+       is transitioned, not switched, or it would cut the fade short. */
+    visibility: hidden;
+    transition: opacity 300ms var(--ease), transform 300ms var(--ease),
+      visibility 0s linear 300ms;
   }
-  .nav[data-open] { opacity: 1; transform: none; pointer-events: auto; }
+  .nav[data-open] {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity 300ms var(--ease), transform 300ms var(--ease), visibility 0s;
+  }
   .nav a { padding: 15px 0; border-bottom: 1px solid var(--line); font-size: 16px; }
   .nav-toggle { display: block; }
   .header__actions { margin-inline-start: auto; }

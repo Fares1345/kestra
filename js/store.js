@@ -553,6 +553,34 @@ export function createStore({ onFlavour, onPackChange } = {}) {
   }
 
   /* ---------------- cart ---------------- */
+  /**
+   * Rebuilding a panel's innerHTML destroys whatever was focused inside it, and
+   * focus falls to <body>. On a keyboard that loses your place mid-task; worse,
+   * the overlay's focus trap only redirects when the active element is the
+   * panel's first or last stop, so from <body> it does nothing and staying in
+   * the dialog depends on the browser's recovery rather than on us.
+   *
+   * Data attributes survive the rebuild — a cart line's stepper is still
+   * data-qty="<key>" data-delta="1" afterwards — so the control is found again
+   * by its own attributes. If it genuinely went away, focus lands on the panel
+   * rather than on <body>, which keeps the trap working.
+   */
+  function keepingFocus(host, rebuild) {
+    const before = document.activeElement;
+    const inside = host && before && host.contains(before) && before !== host;
+    const key = inside
+      ? `${before.tagName.toLowerCase()}${[...before.attributes]
+          .filter((a) => a.name.startsWith('data-'))
+          .map((a) => `[${a.name}="${CSS.escape(a.value)}"]`)
+          .join('')}`
+      : null;
+    rebuild();
+    if (!inside) return;
+    const again = key && key !== before.tagName.toLowerCase() ? host.querySelector(key) : null;
+    const panel = host.closest('.cart__panel, .pdp__panel') || host;
+    (again || panel).focus?.({ preventScroll: true });
+  }
+
   function renderBadge() {
     const cans = lines.reduce((s, l) => s + packById[l.packId].cans * l.qty, 0);
     $$('[data-cart-count]').forEach((el) => {
@@ -560,7 +588,13 @@ export function createStore({ onFlavour, onPackChange } = {}) {
       el.dataset.empty = cans === 0 ? 'true' : 'false';
     });
     const live = $('[data-cart-live]');
-    if (live) live.textContent = cans === 0 ? t('cart.liveEmpty') : t('cart.live', { n: num(cans) });
+    const summary = cans === 0 ? t('cart.liveEmpty') : t('cart.live', { n: num(cans) });
+    if (live) live.textContent = summary;
+    // The control's own name has to carry the count too. Its aria-label wins
+    // over the child span, so the badge was announced as "Open cart" with
+    // twelve cans in it — the live region said the right thing while the
+    // button someone had just tabbed to said nothing about what it holds.
+    $$('[data-cart-open]').forEach((el) => el.setAttribute('aria-label', `${t('nav.cartOpen')} — ${summary}`));
   }
 
   function renderCart() {
@@ -871,7 +905,11 @@ export function createStore({ onFlavour, onPackChange } = {}) {
       const qtyBtn = target.closest('[data-qty]');
       if (qtyBtn) {
         const line = lines.find((l) => lineKey(l) === qtyBtn.dataset.qty);
-        if (line) setQty(qtyBtn.dataset.qty, line.qty + Number(qtyBtn.dataset.delta));
+        if (line) {
+          keepingFocus($('[data-cart-items]'), () =>
+            setQty(qtyBtn.dataset.qty, line.qty + Number(qtyBtn.dataset.delta))
+          );
+        }
         return;
       }
 
@@ -979,11 +1017,11 @@ export function createStore({ onFlavour, onPackChange } = {}) {
       const el = e.target;
       if (el.name === 'pack') {
         pdpState.packId = el.value;
-        renderPdp();
+        keepingFocus($('[data-pdp-body]'), renderPdp);
       }
       if (el.matches('[data-subscribe]')) {
         pdpState.subscribe = el.checked;
-        renderPdp();
+        keepingFocus($('[data-pdp-body]'), renderPdp);
       }
       if (el.matches('[data-zone]')) {
         zoneIndex = Number(el.value) || 0;
