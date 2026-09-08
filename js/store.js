@@ -31,11 +31,48 @@ const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
  * cart state
  * ------------------------------------------------------------------ */
 
+/** Nobody may hold more than this of one line, however the line got here. */
+const MAX_QTY = 20;
+
+/**
+ * A mixed pack carries its own price, because it is the one price on the site
+ * that is computed rather than looked up. That price came back trusted
+ * verbatim out of localStorage, and `linePrice` prefers it over the catalogue
+ * — so editing one number in devtools bought a twelve-pack for a riyal, and a
+ * negative one drove the whole basket below zero. The split is recoverable
+ * from `mixKey`, which is written as `solstice4-vesper8`, so the price is
+ * recomputed here and the line is dropped if the stored figure disagrees.
+ */
+function verifiedMixPrice(line) {
+  if (line.mixPrice === undefined || line.mixPrice === null) return true;
+  if (typeof line.mixKey !== 'string') return false;
+  const counts = {};
+  for (const part of line.mixKey.split('-')) {
+    const m = /^([a-z]+)(\d+)$/.exec(part);
+    if (!m || !byId[m[1]]) return false;
+    counts[m[1]] = (counts[m[1]] || 0) + Number(m[2]);
+  }
+  return mixedPackPrice(counts) === line.mixPrice;
+}
+
 function loadCart() {
   try {
     const raw = JSON.parse(localStorage.getItem(CART_KEY));
     if (!Array.isArray(raw)) return [];
-    return raw.filter((l) => byId[l.productId] && packById[l.packId] && l.qty > 0).slice(0, 40);
+    return raw
+      .filter(
+        (l) =>
+          l &&
+          byId[l.productId] &&
+          packById[l.packId] &&
+          Number.isInteger(l.qty) &&
+          l.qty > 0 &&
+          verifiedMixPrice(l)
+      )
+      // setQty caps a line at MAX_QTY; a line arriving from storage has to obey
+      // the same cap or the cap is only a UI suggestion.
+      .map((l) => (l.qty > MAX_QTY ? { ...l, qty: MAX_QTY } : l))
+      .slice(0, 40);
   } catch {
     return [];
   }
@@ -184,7 +221,7 @@ export function createStore({ onFlavour, onPackChange } = {}) {
     const line = lines.find((l) => lineKey(l) === key);
     if (!line) return;
     if (qty <= 0) lines = lines.filter((l) => lineKey(l) !== key);
-    else line.qty = Math.min(qty, 20);
+    else line.qty = Math.min(qty, MAX_QTY);
     commit();
   }
 
